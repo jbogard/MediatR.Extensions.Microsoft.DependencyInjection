@@ -1,0 +1,1 @@
+# MediatR.Extensions.Microsoft.DependencyInjection
