@@ -1,0 +1,35 @@
+﻿{
+  "version": "1.0.0-alpha-*",
+  "authors": [ "Jimmy Bogard" ],
+  "copyright": "Copyright Jimmy Bogard",
+  "description": "MediatR extensions for ASP.NET Core",
+  "packOptions": {
+    "tags": [ "mediator", "request", "response", "queries", "commands", "notifications" ],
+
+    "licenseUrl": "https://github.com/jbogard/MediatR/blob/master/LICENSE",
+    "iconUrl": "https://raw.githubusercontent.com/jbogard/MediatR/master/assets/logo/gradient_128x128.png",
+    "projectUrl": "https://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection"
+    }
+  },
+
+  "dependencies": {
+    "Microsoft.Extensions.DependencyInjection.Abstractions": "1.0.0",
+    "MediatR": "2.1.0"
+  },
+
+  "frameworks": {
+    "net451": {
+      "frameworkAssemblies": {
+        "System.Runtime": ""
+      }
+    },
+    "netstandard1.1": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
+      }
+    }
+  }
+}
