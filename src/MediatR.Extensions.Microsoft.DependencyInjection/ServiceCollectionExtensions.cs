@@ -5,9 +5,25 @@
     using System.Linq;
     using System.Reflection;
     using Microsoft.Extensions.DependencyInjection;
+#if DEPENDENCY_MODEL
+    using Microsoft.Extensions.DependencyModel;
+#endif
 
     public static class ServiceCollectionExtensions
     {
+#if DEPENDENCY_MODEL
+        public static void AddMediatR(this IServiceCollection services)
+        {
+            services.AddMediatR(DependencyContext.Default);
+        }
+
+        public static void AddMediatR(this IServiceCollection services, DependencyContext dependencyContext)
+        {
+            services.AddMediatR(dependencyContext.RuntimeLibraries
+                .SelectMany(lib => lib.GetDefaultAssemblyNames(dependencyContext).Select(Assembly.Load)));
+        }
+#endif
+
         public static void AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
         {
             AddRequiredServices(services);

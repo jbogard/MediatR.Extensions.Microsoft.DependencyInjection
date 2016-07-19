@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.0.0",
+  "version": "1.1.0-alpha-*",
   "authors": [ "Jimmy Bogard" ],
   "copyright": "Copyright Jimmy Bogard",
   "description": "MediatR extensions for ASP.NET Core",
@@ -24,12 +24,27 @@
     "net451": {
       "frameworkAssemblies": {
         "System.Runtime": ""
+      },
+      "dependencies": {
+        "Microsoft.Extensions.DependencyModel": "1.0.0"
+      },
+      "buildOptions": {
+        "define": [ "DEPENDENCY_MODEL" ]
       }
     },
     "netstandard1.1": {
       "dependencies": {
         "NETStandard.Library": "1.6.0"
       }
-    }
+    },
+    "netstandard1.6": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "Microsoft.Extensions.DependencyModel": "1.0.0"
+      },
+      "buildOptions": {
+        "define": [ "DEPENDENCY_MODEL" ]
+      }
+    } 
   }
 }
