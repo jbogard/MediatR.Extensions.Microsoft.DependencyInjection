@@ -9,7 +9,7 @@ services.AddMediatR(typeof(MyHander));
 or with an assembly:
 
 ```
-services.AddMediatR(typeof(Startup).Assembly);
+services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 ```
 
 Supports generic variance of handlers.
