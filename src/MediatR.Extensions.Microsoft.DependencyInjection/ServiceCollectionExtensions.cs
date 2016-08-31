@@ -185,7 +185,7 @@
         {
             services.AddScoped<SingleInstanceFactory>(p => t => p.GetRequiredService(t));
             services.AddScoped<MultiInstanceFactory>(p => t => p.GetRequiredServices(t));
-            services.AddSingleton<IMediator, Mediator>();
+            services.AddScoped<IMediator, Mediator>();
         }
 
         private static IEnumerable<object> GetRequiredServices(this IServiceProvider provider, Type serviceType)
