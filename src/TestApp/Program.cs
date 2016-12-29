@@ -16,7 +16,7 @@ namespace TestApp
         public static void Main(string[] args)
         {
             IServiceCollection services = new ServiceCollection();
-            services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
+            services.AddMediatR();
 //            var provider = services.BuildServiceProvider();
 
             foreach (var service in services)
