@@ -33,12 +33,12 @@ namespace TestApp
         public string Message { get; set; }
     }
 
-    public class PingAsync : IAsyncRequest<Pong>
+    public class PingAsync : IRequest<Pong>
     {
         public string Message { get; set; }
     }
 
-    public class PingCancellableAsync : ICancellableAsyncRequest<Pong>
+    public class PingCancellableAsync : IRequest<Pong>
     {
         public string Message { get; set; }
     }
@@ -53,14 +53,14 @@ namespace TestApp
 
     }
 
-    public class PingedAsync : IAsyncNotification
+    public class PingedAsync : INotification
     {
 
     }
 
-    public class GenericAsyncHandler : IAsyncNotificationHandler<IAsyncNotification>
+    public class GenericAsyncHandler : IAsyncNotificationHandler<INotification>
     {
-        public Task Handle(IAsyncNotification notification)
+        public Task Handle(INotification notification)
         {
             return Task.FromResult(0);
         }

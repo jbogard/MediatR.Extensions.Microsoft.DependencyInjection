@@ -1,5 +1,6 @@
 ﻿namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -8,12 +9,12 @@
         public string Message { get; set; }
     }
 
-    public class PingAsync : IAsyncRequest<Pong>
+    public class PingAsync : IRequest<Pong>
     {
         public string Message { get; set; }
     }
 
-    public class PingCancellableAsync : ICancellableAsyncRequest<Pong>
+    public class PingCancellableAsync : IRequest<Pong>
     {
         public string Message { get; set; }
     }
@@ -23,19 +24,30 @@
         public string Message { get; set; }
     }
 
+    public class Zing : IRequest<Zong>
+    {
+        public string Message { get; set; }
+    }
+
+    public class Zong
+    {
+        public string Message { get; set; }
+    }
+
+
     public class Pinged : INotification
     {
 
     }
 
-    public class PingedAsync : IAsyncNotification
+    public class PingedAsync : INotification
     {
 
     }
 
-    public class GenericAsyncHandler : IAsyncNotificationHandler<IAsyncNotification>
+    public class GenericAsyncHandler : IAsyncNotificationHandler<INotification>
     {
-        public Task Handle(IAsyncNotification notification)
+        public Task Handle(INotification notification)
         {
             return Task.FromResult(0);
         }
@@ -94,11 +106,39 @@
         }
     }
 
+    public class Logger
+    {
+        public IList<string> Messages { get; } = new List<string>();
+    }
+
     public class PingHandler : IRequestHandler<Ping, Pong>
     {
+        private readonly Logger _logger;
+
+        public PingHandler(Logger logger)
+        {
+            _logger = logger;
+        }
         public Pong Handle(Ping message)
         {
+            _logger.Messages.Add("Handler");
             return new Pong { Message = message.Message + " Pong" };
         }
     }
+
+    public class ZingHandler : IAsyncRequestHandler<Zing, Zong>
+    {
+        private readonly Logger _output;
+
+        public ZingHandler(Logger output)
+        {
+            _output = output;
+        }
+        public Task<Zong> Handle(Zing message)
+        {
+            _output.Messages.Add("Handler");
+            return Task.FromResult(new Zong { Message = message.Message + " Zong" });
+        }
+    }
+
 }

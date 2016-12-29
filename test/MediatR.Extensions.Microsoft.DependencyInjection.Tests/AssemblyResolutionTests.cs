@@ -15,6 +15,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         public AssemblyResolutionTests()
         {
             IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(new Logger());
             services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
             _provider = services.BuildServiceProvider();
         }

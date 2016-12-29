@@ -15,6 +15,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         public TypeResolutionTests()
         {
             IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(new Logger());
             services.AddMediatR(typeof(Ping));
             _provider = services.BuildServiceProvider();
         }
