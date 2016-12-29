@@ -12,6 +12,11 @@
     public static class ServiceCollectionExtensions
     {
 #if DEPENDENCY_MODEL
+        private static HashSet<string> ReferenceAssemblies { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "MediatR"
+        };
+
         public static void AddMediatR(this IServiceCollection services)
         {
             services.AddMediatR(DependencyContext.Default);
@@ -19,8 +24,121 @@
 
         public static void AddMediatR(this IServiceCollection services, DependencyContext dependencyContext)
         {
-            services.AddMediatR(dependencyContext.RuntimeLibraries
-                .SelectMany(lib => lib.GetDefaultAssemblyNames(dependencyContext).Select(Assembly.Load)));
+            services.AddMediatR(GetCandidateAssemblies(dependencyContext));
+        }
+
+        private static IEnumerable<Assembly> GetCandidateAssemblies(DependencyContext dependencyContext)
+        {
+            return GetCandidateLibraries(dependencyContext)
+                .SelectMany(library => library.GetDefaultAssemblyNames(dependencyContext))
+                .Select(Assembly.Load);
+        }
+
+        private static IEnumerable<RuntimeLibrary> GetCandidateLibraries(DependencyContext dependencyContext)
+        {
+            if (ReferenceAssemblies == null)
+            {
+                return Enumerable.Empty<RuntimeLibrary>();
+            }
+
+            var candidatesResolver = new CandidateResolver(dependencyContext.RuntimeLibraries, ReferenceAssemblies);
+            return candidatesResolver.GetCandidates();
+        }
+
+        private class CandidateResolver
+        {
+            private readonly IDictionary<string, Dependency> _dependencies;
+
+            public CandidateResolver(IReadOnlyList<RuntimeLibrary> dependencies, ISet<string> referenceAssemblies)
+            {
+                var dependenciesWithNoDuplicates = new Dictionary<string, Dependency>(StringComparer.OrdinalIgnoreCase);
+                foreach (var dependency in dependencies)
+                {
+                    if (dependenciesWithNoDuplicates.ContainsKey(dependency.Name))
+                    {
+                        throw new InvalidOperationException(
+                            $"A duplicate entry for library reference {dependency.Name} was found. Please check that all package references in all projects use the same casing for the same package references.");
+                    }
+                    dependenciesWithNoDuplicates.Add(dependency.Name, CreateDependency(dependency, referenceAssemblies));
+                }
+
+                _dependencies = dependenciesWithNoDuplicates;
+            }
+
+            private Dependency CreateDependency(RuntimeLibrary library, ISet<string> referenceAssemblies)
+            {
+                var classification = DependencyClassification.Unknown;
+                if (referenceAssemblies.Contains(library.Name))
+                {
+                    classification = DependencyClassification.MediatRReference;
+                }
+
+                return new Dependency(library, classification);
+            }
+
+            private DependencyClassification ComputeClassification(string dependency)
+            {
+                var candidateEntry = _dependencies[dependency];
+                if (candidateEntry.Classification != DependencyClassification.Unknown)
+                {
+                    return candidateEntry.Classification;
+                }
+                else
+                {
+                    var classification = DependencyClassification.NotCandidate;
+                    foreach (var candidateDependency in candidateEntry.Library.Dependencies)
+                    {
+                        var dependencyClassification = ComputeClassification(candidateDependency.Name);
+                        if (dependencyClassification == DependencyClassification.Candidate ||
+                            dependencyClassification == DependencyClassification.MediatRReference)
+                        {
+                            classification = DependencyClassification.Candidate;
+                            break;
+                        }
+                    }
+
+                    candidateEntry.Classification = classification;
+
+                    return classification;
+                }
+            }
+
+            public IEnumerable<RuntimeLibrary> GetCandidates()
+            {
+                foreach (var dependency in _dependencies)
+                {
+                    if (ComputeClassification(dependency.Key) == DependencyClassification.Candidate)
+                    {
+                        yield return dependency.Value.Library;
+                    }
+                }
+            }
+
+            private class Dependency
+            {
+                public Dependency(RuntimeLibrary library, DependencyClassification classification)
+                {
+                    Library = library;
+                    Classification = classification;
+                }
+
+                public RuntimeLibrary Library { get; }
+
+                public DependencyClassification Classification { get; set; }
+
+                public override string ToString()
+                {
+                    return $"Library: {Library.Name}, Classification: {Classification}";
+                }
+            }
+
+            private enum DependencyClassification
+            {
+                Unknown = 0,
+                Candidate = 1,
+                NotCandidate = 2,
+                MediatRReference = 3
+            }
         }
 #endif
 
