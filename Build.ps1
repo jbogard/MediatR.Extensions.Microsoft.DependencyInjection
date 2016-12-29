@@ -20,7 +20,7 @@ function Install-Dotnet
     }
 
     # Run the dotnet CLI install
-    & .\.dotnet\dotnet-install.ps1
+    & .\.dotnet\dotnet-install.ps1 -Version "1.0.0-preview2-003121"
 
     # Add the dotnet folder path to the process.
     Remove-PathVariable $env:DOTNET_INSTALL_DIR
@@ -43,13 +43,13 @@ function Remove-PathVariable
 function Restore-Packages
 {
     param([string] $DirectoryName)
-    & dotnet restore -v Warning ("""" + $DirectoryName + """")
+    exec { & dotnet restore -v Warning ("""" + $DirectoryName + """") }
 }
 
 function Test-Project
 {
     param([string] $DirectoryName)
-    & dotnet test -c Release ("""" + $DirectoryName + """")
+    exec { & dotnet test -c Release ("""" + $DirectoryName + """") }
 }
 
 # Taken from psake https://github.com/psake/psake
