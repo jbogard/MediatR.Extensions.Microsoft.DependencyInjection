@@ -33,6 +33,12 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
 
         [Fact]
+        public void ShouldResolveVoidRequestHandler()
+        {
+            _provider.GetService<IRequestHandler<Ding>>().ShouldNotBeNull();
+        }
+
+        [Fact]
         public void ShouldResolveAsyncRequestHandler()
         {
             _provider.GetService<IAsyncRequestHandler<PingAsync, Pong>>().ShouldNotBeNull();

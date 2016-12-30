@@ -177,8 +177,11 @@
             var openInterfaces = new[]
             {
                 typeof(IRequestHandler<,>),
+                typeof(IRequestHandler<>),
                 typeof(IAsyncRequestHandler<,>),
+                typeof(IAsyncRequestHandler<>),
                 typeof(ICancellableAsyncRequestHandler<,>),
+                typeof(ICancellableAsyncRequestHandler<>),
                 typeof(INotificationHandler<>),
                 typeof(IAsyncNotificationHandler<>),
                 typeof(ICancellableAsyncNotificationHandler<>)

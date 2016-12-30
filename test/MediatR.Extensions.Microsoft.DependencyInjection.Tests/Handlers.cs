@@ -34,6 +34,10 @@
         public string Message { get; set; }
     }
 
+    public class Ding : IRequest
+    {
+        public string Message { get; set; }
+    }
 
     public class Pinged : INotification
     {
@@ -65,6 +69,13 @@
         public Task<Pong> Handle(PingAsync message)
         {
             return Task.FromResult(new Pong());
+        }
+    }
+
+    public class DingAsyncHandler : IRequestHandler<Ding>
+    {
+        public void Handle(Ding message)
+        {
         }
     }
 
