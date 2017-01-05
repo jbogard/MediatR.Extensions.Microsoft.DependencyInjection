@@ -7,6 +7,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
     using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
+    using Pipeline;
     using Shouldly;
     using Xunit;
 
@@ -109,6 +110,65 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             }
         }
 
+        public class FirstPreProcessor<TRequest> : IRequestPreProcessor<TRequest>
+        {
+            private readonly Logger _output;
+
+            public FirstPreProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(TRequest request)
+            {
+                _output.Messages.Add("First pre processor");
+                return Task.FromResult(0);
+            }
+        }
+
+        public class NextPreProcessor<TRequest> : IRequestPreProcessor<TRequest>
+        {
+            private readonly Logger _output;
+
+            public NextPreProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(TRequest request)
+            {
+                _output.Messages.Add("Next pre processor");
+                return Task.FromResult(0);
+            }
+        }
+        public class FirstPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
+        {
+            private readonly Logger _output;
+
+            public FirstPostProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(TRequest request, TResponse response)
+            {
+                _output.Messages.Add("First post processor");
+                return Task.FromResult(0);
+            }
+        }
+
+        public class NextPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
+        {
+            private readonly Logger _output;
+
+            public NextPostProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(TRequest request, TResponse response)
+            {
+                _output.Messages.Add("Next post processor");
+                return Task.FromResult(0);
+            }
+        }
+
         [Fact]
         public async Task Should_wrap_with_behavior()
         {
@@ -149,7 +209,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             var provider = services.BuildServiceProvider();
 
             var mediator = provider.GetService<IMediator>();
-
+            
             var response = await mediator.Send(new Ping { Message = "Ping" });
 
             response.Message.ShouldBe("Ping Pong");
@@ -161,6 +221,33 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 "Handler",
                 "Inner generic after",
                 "Outer generic after",
+            });
+        }
+
+        [Fact]
+        public async Task Should_pick_up_pre_and_post_processors()
+        {
+            var output = new Logger();
+            IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(output);
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
+            var provider = services.BuildServiceProvider();
+
+            var mediator = provider.GetService<IMediator>();
+
+            var response = await mediator.Send(new Ping { Message = "Ping" });
+
+            response.Message.ShouldBe("Ping Pong");
+
+            output.Messages.ShouldBe(new[]
+            {
+                "First pre processor",
+                "Next pre processor",
+                "Handler",
+                "First post processor",
+                "Next post processor",
             });
         }
 

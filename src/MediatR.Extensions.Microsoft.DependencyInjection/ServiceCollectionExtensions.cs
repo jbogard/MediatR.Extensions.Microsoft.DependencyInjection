@@ -5,10 +5,20 @@
     using System.Linq;
     using System.Reflection;
     using Microsoft.Extensions.DependencyInjection;
+    using Pipeline;
 #if DEPENDENCY_MODEL
     using Microsoft.Extensions.DependencyModel;
 #endif
 
+    /// <summary>
+    /// Extensions to scan for MediatR handlers and registers them.
+    /// - Scans for any handler interface implementations and registers them as <see cref="ServiceLifetime.Transient"/>
+    /// - Scans for any <see cref="IRequestPreProcessor{TRequest}"/> and <see cref="IRequestPostProcessor{TRequest,TResponse}"/> implementations and registers them as scoped instances
+    /// Registers <see cref="SingleInstanceFactory"/>, <see cref="MultiInstanceFactory"/> and <see cref="IMediator"/> as scoped instances
+    /// After calling AddMediatR you can use the container to resolve an <see cref="IMediator"/> instance.
+    /// This does not scan for any <see cref="IPipelineBehavior{TRequest,TResponse}"/> instances including <see cref="RequestPreProcessorBehavior{TRequest,TResponse}"/> and <see cref="RequestPreProcessorBehavior{TRequest,TResponse}"/>.
+    /// To register behaviors, use the <see cref="ServiceCollectionServiceExtensions.AddTransient(IServiceCollection,Type,Type)"/> with the open generic or closed generic types.
+    /// </summary>
     public static class ServiceCollectionExtensions
     {
 #if DEPENDENCY_MODEL
@@ -17,11 +27,20 @@
             "MediatR"
         };
 
+        /// <summary>
+        /// Registers handlers and the mediator types from <see cref="DependencyContext.Default"/>.
+        /// </summary>
+        /// <param name="services">Service collection</param>
         public static void AddMediatR(this IServiceCollection services)
         {
             services.AddMediatR(DependencyContext.Default);
         }
 
+        /// <summary>
+        /// Registers handlers and mediator types from the specified <see cref="DependencyContext"/>
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="dependencyContext"></param>
         public static void AddMediatR(this IServiceCollection services, DependencyContext dependencyContext)
         {
             services.AddMediatR(GetCandidateAssemblies(dependencyContext));
@@ -142,6 +161,11 @@
         }
 #endif
 
+        /// <summary>
+        /// Registers handlers and mediator types from the specified assemblies
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="assemblies">Assemblies to scan</param>
         public static void AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
         {
             AddRequiredServices(services);
@@ -149,6 +173,11 @@
             AddMediatRClasses(services, assemblies);
         }
 
+        /// <summary>
+        /// Registers handlers and mediator types from the specified assemblies
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="assemblies">Assemblies to scan</param>
         public static void AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             AddRequiredServices(services);
@@ -156,6 +185,11 @@
             AddMediatRClasses(services, assemblies);
         }
 
+        /// <summary>
+        /// Registers handlers and mediator types from the assemblies that contain the specified types
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="handlerAssemblyMarkerTypes"></param>
         public static void AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
         {
             AddRequiredServices(services);
@@ -163,6 +197,11 @@
             AddMediatRClasses(services, handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly));
         }
 
+        /// <summary>
+        /// Registers handlers and mediator types from the assemblies that contain the specified types
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="handlerAssemblyMarkerTypes"></param>
         public static void AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes)
         {
             AddRequiredServices(services);
@@ -184,7 +223,7 @@
                 typeof(ICancellableAsyncRequestHandler<>),
                 typeof(INotificationHandler<>),
                 typeof(IAsyncNotificationHandler<>),
-                typeof(ICancellableAsyncNotificationHandler<>)
+                typeof(ICancellableAsyncNotificationHandler<>),
             };
             foreach (var openInterface in openInterfaces)
             {
@@ -220,6 +259,33 @@
                     {
                         AddConcretionsThatCouldBeClosed(@interface, concretions, services);
                     }
+                }
+            }
+
+            var multiOpenInterfaces = new[]
+            {
+                typeof(IRequestPreProcessor<>),
+                typeof(IRequestPostProcessor<,>)
+            };
+
+            foreach (var multiOpenInterface in multiOpenInterfaces)
+            {
+                var concretions = new List<Type>();
+
+                foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
+                {
+                    IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(multiOpenInterface).ToArray();
+                    if (!interfaceTypes.Any()) continue;
+
+                    if (type.IsConcrete())
+                    {
+                        concretions.Add(type);
+                    }
+                }
+
+                foreach (var concretion in concretions)
+                {
+                    services.AddTransient(multiOpenInterface, concretion);
                 }
             }
         }
@@ -300,7 +366,6 @@
             if (list.Contains(value)) return;
             list.Add(value);
         }
-
 
         private static void AddRequiredServices(IServiceCollection services)
         {
