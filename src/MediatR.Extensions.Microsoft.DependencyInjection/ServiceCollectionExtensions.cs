@@ -369,14 +369,9 @@
 
         private static void AddRequiredServices(IServiceCollection services)
         {
-            services.AddScoped<SingleInstanceFactory>(p => t => p.GetRequiredService(t));
-            services.AddScoped<MultiInstanceFactory>(p => t => p.GetRequiredServices(t));
+            services.AddScoped<SingleInstanceFactory>(p => t => p.GetService(t));
+            services.AddScoped<MultiInstanceFactory>(p => t => p.GetServices(t));
             services.AddScoped<IMediator, Mediator>();
-        }
-
-        private static IEnumerable<object> GetRequiredServices(this IServiceProvider provider, Type serviceType)
-        {
-            return (IEnumerable<object>)provider.GetRequiredService(typeof(IEnumerable<>).MakeGenericType(serviceType));
         }
     }
 }
