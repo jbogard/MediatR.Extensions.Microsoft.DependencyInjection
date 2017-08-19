@@ -4,8 +4,6 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
     using System;
     using System.Linq;
-    using System.Reflection;
-    using global::Microsoft.Extensions.DependencyModel;
     using Shouldly;
     using Xunit;
 
@@ -17,7 +15,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
-            services.AddMediatR(DependencyContext.Load(typeof(DependencyContextResolutionTests).GetTypeInfo().Assembly));
+            services.AddMediatR();
             _provider = services.BuildServiceProvider();
         }
 

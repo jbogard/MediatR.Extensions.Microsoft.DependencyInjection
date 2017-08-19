@@ -1,55 +1,7 @@
-function Install-Dotnet
-{
-  & where.exe dotnet 2>&1 | Out-Null
-
-  if(($LASTEXITCODE -ne 0) -Or ((Test-Path Env:\APPVEYOR) -eq $true))
-  {
-    Write-Host "Dotnet CLI not found - downloading latest version"
-
-    # Prepare the dotnet CLI folder
-    $env:DOTNET_INSTALL_DIR="$(Convert-Path "$PSScriptRoot")\.dotnet\win7-x64"
-    if (!(Test-Path $env:DOTNET_INSTALL_DIR))
-    {
-      mkdir $env:DOTNET_INSTALL_DIR | Out-Null
-    }
-
-    # Download the dotnet CLI install script
-    if (!(Test-Path .\dotnet\install.ps1))
-    {
-      Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1" -OutFile ".\.dotnet\dotnet-install.ps1"
-    }
-
-    # Run the dotnet CLI install
-    & .\.dotnet\dotnet-install.ps1 -Version "1.0.0-preview2-003121"
-
-    # Add the dotnet folder path to the process.
-    Remove-PathVariable $env:DOTNET_INSTALL_DIR
-    $env:PATH = "$env:DOTNET_INSTALL_DIR;$env:PATH"
-  }
-}
-
-function Remove-PathVariable
-{
-  [cmdletbinding()]
-  param([string] $VariableToRemove)
-  $path = [Environment]::GetEnvironmentVariable("PATH", "User")
-  $newItems = $path.Split(';') | Where-Object { $_.ToString() -inotlike $VariableToRemove }
-  [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
-  $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
-  $newItems = $path.Split(';') | Where-Object { $_.ToString() -inotlike $VariableToRemove }
-  [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
-}
-
-function Restore-Packages
-{
-    param([string] $DirectoryName)
-    exec { & dotnet restore -v Warning ("""" + $DirectoryName + """") }
-}
-
 function Test-Project
 {
     param([string] $DirectoryName)
-    exec { & dotnet test -c Release ("""" + $DirectoryName + """") }
+    & dotnet test -c Release ("""" + $DirectoryName + """")
 }
 
 # Taken from psake https://github.com/psake/psake
@@ -83,18 +35,31 @@ Push-Location $PSScriptRoot
 
 if(Test-Path .\artifacts) { Remove-Item .\artifacts -Force -Recurse }
 
-# Install Dotnet CLI
-Install-Dotnet
+$branch = @{ $true = $env:APPVEYOR_REPO_BRANCH; $false = $(git symbolic-ref --short -q HEAD) }[$env:APPVEYOR_REPO_BRANCH -ne $NULL];
+$revision = @{ $true = "{0:00000}" -f [convert]::ToInt32("0" + $env:APPVEYOR_BUILD_NUMBER, 10); $false = "local" }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
+$suffix = @{ $true = ""; $false = "$($branch.Substring(0, [math]::Min(10,$branch.Length)))-$revision"}[$branch -eq "master" -and $revision -ne "local"]
+$commitHash = $(git rev-parse --short HEAD)
+$buildSuffix = @{ $true = "$($suffix)-$($commitHash)"; $false = "$($branch)-$($commitHash)" }[$suffix -ne ""]
+$versionSuffix = @{ $true = "--version-suffix=$($suffix)"; $false = ""}[$suffix -ne ""]
 
-# Package restore
-Get-ChildItem -Path . -Filter *.xproj -Recurse | ForEach-Object { Restore-Packages $_.DirectoryName }
+echo "build: Package version suffix is $suffix"
+echo "build: Build version suffix is $buildSuffix" 
+	
+exec { dotnet restore }
 
-# Tests
-Get-ChildItem -Path .\test -Filter *.xproj -Recurse | ForEach-Object { Test-Project $_.DirectoryName }
+exec { dotnet build -c Release --version-suffix=$buildSuffix -v q /nologo }
 
-$revision = @{ $true = $env:APPVEYOR_BUILD_NUMBER; $false = 1 }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
-$revision = "{0:D4}" -f [convert]::ToInt32($revision, 10)
+foreach ($test in ls test/*.Tests) {
+    Push-Location $test
 
-exec { & dotnet pack .\src\MediatR.Extensions.Microsoft.DependencyInjection -c Release -o .\artifacts --version-suffix=$revision }
+	echo "build: Testing project in $test"
+
+    & dotnet test -c Release
+    if($LASTEXITCODE -ne 0) { exit 3 }
+
+    Pop-Location
+}
+
+exec { dotnet pack .\src\MediatR.Extensions.Microsoft.DependencyInjection -c Release -o ..\..\artifacts --include-symbols --no-build $versionSuffix }
 
 Pop-Location
