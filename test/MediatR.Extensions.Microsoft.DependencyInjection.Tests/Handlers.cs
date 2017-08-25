@@ -49,6 +49,16 @@
 
     }
 
+    public class GenericPing<T> : IRequest<GenericPong<T>>
+    {
+        public T Message { get; set; }
+    }
+
+    public class GenericPong<T>
+    {
+        public T Response { get; set; }
+    }
+
     public class GenericAsyncHandler : IAsyncNotificationHandler<INotification>
     {
         public Task Handle(INotification notification)
@@ -152,4 +162,11 @@
         }
     }
 
+    public class GenericPingHandler<T> : IRequestHandler<GenericPing<T>, GenericPong<T>>
+    {
+        public GenericPong<T> Handle(GenericPing<T> message)
+        {
+            return new GenericPong<T> { Response = message.Message };
+        }
+    }
 }
