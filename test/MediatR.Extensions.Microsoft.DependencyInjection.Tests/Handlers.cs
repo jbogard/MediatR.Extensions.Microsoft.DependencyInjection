@@ -152,4 +152,21 @@
         }
     }
 
+    public class DuplicateTest : IRequest<string> { }
+    public class DuplicateHandler1 : IRequestHandler<DuplicateTest, string>
+    {
+        public string Handle(DuplicateTest message)
+        {
+            return nameof(DuplicateHandler1);
+        }
+    }
+
+    public class DuplicateHandler2 : IRequestHandler<DuplicateTest, string>
+    {
+        public string Handle(DuplicateTest message)
+        {
+            return nameof(DuplicateHandler2);
+        }
+    }
+
 }
