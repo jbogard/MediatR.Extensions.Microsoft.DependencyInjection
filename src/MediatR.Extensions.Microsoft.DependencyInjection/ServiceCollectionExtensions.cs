@@ -6,6 +6,7 @@
     using System.Reflection;
     using Microsoft.Extensions.DependencyInjection;
     using Pipeline;
+    using Microsoft.Extensions.DependencyInjection.Extensions;
 
     /// <summary>
     /// Extensions to scan for MediatR handlers and registers them.
@@ -34,9 +35,7 @@
         /// <param name="assemblies">Assemblies to scan</param>
         public static void AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
         {
-            AddRequiredServices(services);
-
-            AddMediatRClasses(services, assemblies);
+            services.AddMediatR(assemblies.AsEnumerable());
         }
 
         /// <summary>
@@ -58,9 +57,7 @@
         /// <param name="handlerAssemblyMarkerTypes"></param>
         public static void AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
         {
-            AddRequiredServices(services);
-
-            AddMediatRClasses(services, handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly));
+            services.AddMediatR(handlerAssemblyMarkerTypes.AsEnumerable());
         }
 
         /// <summary>
@@ -79,7 +76,7 @@
         {
             assembliesToScan = assembliesToScan as Assembly[] ?? assembliesToScan.ToArray();
 
-            var openInterfaces = new[]
+            var openRequestInterfaces = new[]
             {
                 typeof(IRequestHandler<,>),
                 typeof(IRequestHandler<>),
@@ -87,46 +84,50 @@
                 typeof(IAsyncRequestHandler<>),
                 typeof(ICancellableAsyncRequestHandler<,>),
                 typeof(ICancellableAsyncRequestHandler<>),
+            };
+            var openNotificationHandlerInterfaces = new[]
+            {
                 typeof(INotificationHandler<>),
                 typeof(IAsyncNotificationHandler<>),
                 typeof(ICancellableAsyncNotificationHandler<>),
             };
-            foreach (var openInterface in openInterfaces)
-            {
-                var concretions = new List<Type>();
-                var interfaces = new List<Type>();
+            AddInterfacesAsTransient(openRequestInterfaces, services, assembliesToScan, false);
+            AddInterfacesAsTransient(openNotificationHandlerInterfaces, services, assembliesToScan, true);
 
-                foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
-                {
-                    IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
-                    if (!interfaceTypes.Any()) continue;
+            //foreach (var openInterface in openRequestInterfaces)
+            //{
+            //    var concretions = new List<Type>();
+            //    var interfaces = new List<Type>();
 
-                    if (type.IsConcrete())
-                    {
-                        concretions.Add(type);
-                    }
+            //    foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
+            //    {
+            //        IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
+            //        if (!interfaceTypes.Any()) continue;
 
-                    foreach (Type interfaceType in interfaceTypes)
-                    {
-                        interfaces.Fill(interfaceType);
-                    }
-                }
+            //        if (type.IsConcrete())
+            //        {
+            //            concretions.Add(type);
+            //        }
 
-                foreach (var @interface in interfaces)
-                {
-                    var exactMatches = concretions.Where(t => t.CanBeCastTo(@interface)).ToArray();
+            //        foreach (Type interfaceType in interfaceTypes)
+            //        {
+            //            interfaces.Fill(interfaceType);
+            //        }
+            //    }
 
-                    foreach (var exactMatch in exactMatches)
-                    {
-                        services.AddTransient(@interface, exactMatch);
-                    }
+            //    foreach (var @interface in interfaces)
+            //    {
+            //        concretions
+            //            .Where(t => t.CanBeCastTo(@interface))
+            //            .ToList()
+            //            .ForEach(match => services.TryAddTransient(@interface, match));
 
-                    if (!@interface.IsOpenGeneric())
-                    {
-                        AddConcretionsThatCouldBeClosed(@interface, concretions, services);
-                    }
-                }
-            }
+            //        if (!@interface.IsOpenGeneric())
+            //        {
+            //            AddConcretionsThatCouldBeClosed(@interface, concretions, services);
+            //        }
+            //    }
+            //}
 
             var multiOpenInterfaces = new[]
             {
@@ -149,21 +150,79 @@
                     }
                 }
 
-                foreach (var concretion in concretions)
+                // Always add every pre/post processor
+                concretions
+                    .ForEach(c => services.AddTransient(multiOpenInterface, c));
+            }
+        }
+
+        /// <summary>
+        /// Helper method use to differentiate behavior between request handlers and notification handlers.
+        /// Request handlers should only be added once (so set addIfAlreadyExists to false)
+        /// Notification handlers should all be added (set addIfAlreadyExists to true)
+        /// </summary>
+        /// <param name="openRequestInterfaces"></param>
+        /// <param name="services"></param>
+        /// <param name="assembliesToScan"></param>
+        /// <param name="addIfAlreadyExists"></param>
+        private static void AddInterfacesAsTransient(Type[] openRequestInterfaces, 
+            IServiceCollection services, 
+            IEnumerable<Assembly> assembliesToScan, 
+            bool addIfAlreadyExists)
+        {
+            foreach (var openInterface in openRequestInterfaces)
+            {
+                var concretions = new List<Type>();
+                var interfaces = new List<Type>();
+
+                foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
                 {
-                    services.AddTransient(multiOpenInterface, concretion);
+                    IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
+                    if (!interfaceTypes.Any()) continue;
+
+                    if (type.IsConcrete())
+                    {
+                        concretions.Add(type);
+                    }
+
+                    foreach (Type interfaceType in interfaceTypes)
+                    {
+                        interfaces.Fill(interfaceType);
+                    }
+                }
+
+                foreach (var @interface in interfaces)
+                {
+                    var matches = concretions
+                        .Where(t => t.CanBeCastTo(@interface))
+                        .ToList();
+                    if (addIfAlreadyExists)
+                    {
+                        matches
+                            .ForEach(match => services.AddTransient(@interface, match));
+                    }
+                    else
+                    {
+                        matches
+                            .ForEach(match => services.TryAddTransient(@interface, match));
+                    }
+
+                    if (!@interface.IsOpenGeneric())
+                    {
+                        AddConcretionsThatCouldBeClosed(@interface, concretions, services);
+                    }
                 }
             }
         }
 
         private static void AddConcretionsThatCouldBeClosed(Type @interface, List<Type> concretions, IServiceCollection services)
         {
-            foreach (var type in concretions.Where(x => x.IsOpenGeneric())
-                .Where(x => x.CouldCloseTo(@interface)))
+            foreach (var type in concretions
+                .Where(x => x.IsOpenGeneric() && x.CouldCloseTo(@interface)))
             {
                 try
                 {
-                    services.AddTransient(@interface, type.MakeGenericType(@interface.GenericTypeArguments));
+                    services.TryAddTransient(@interface, type.MakeGenericType(@interface.GenericTypeArguments));
                 }
                 catch (Exception)
                 {

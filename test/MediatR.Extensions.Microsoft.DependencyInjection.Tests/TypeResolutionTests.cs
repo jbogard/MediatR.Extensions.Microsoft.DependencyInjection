@@ -61,5 +61,19 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             _provider.GetServices<IAsyncNotificationHandler<PingedAsync>>().Count().ShouldBe(3);
         }
+
+        [Fact]
+        public void ShouldResolveFirstDuplicateHandler()
+        {
+            _provider.GetService<IRequestHandler<DuplicateTest, string>>().ShouldNotBeNull();
+            _provider.GetService<IRequestHandler<DuplicateTest, string>>()
+                .ShouldBeAssignableTo<DuplicateHandler1>();
+        }
+
+        [Fact]
+        public void ShouldResolveIgnoreSecondDuplicateHandler()
+        {
+            _provider.GetServices<IRequestHandler<DuplicateTest, string>>().Count().ShouldBe(1);
+        }
     }
 }

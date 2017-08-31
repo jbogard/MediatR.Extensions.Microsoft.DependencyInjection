@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TestApp
 {
-    using System.Reflection;
-    using MediatR;
-    using Microsoft.Extensions.DependencyInjection;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     public class Program
     {
