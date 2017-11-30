@@ -79,55 +79,14 @@
             var openRequestInterfaces = new[]
             {
                 typeof(IRequestHandler<,>),
-                typeof(IRequestHandler<>),
-                typeof(IAsyncRequestHandler<,>),
-                typeof(IAsyncRequestHandler<>),
-                typeof(ICancellableAsyncRequestHandler<,>),
-                typeof(ICancellableAsyncRequestHandler<>),
+                typeof(IRequestHandler<>)
             };
             var openNotificationHandlerInterfaces = new[]
             {
                 typeof(INotificationHandler<>),
-                typeof(IAsyncNotificationHandler<>),
-                typeof(ICancellableAsyncNotificationHandler<>),
             };
             AddInterfacesAsTransient(openRequestInterfaces, services, assembliesToScan, false);
             AddInterfacesAsTransient(openNotificationHandlerInterfaces, services, assembliesToScan, true);
-
-            //foreach (var openInterface in openRequestInterfaces)
-            //{
-            //    var concretions = new List<Type>();
-            //    var interfaces = new List<Type>();
-
-            //    foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
-            //    {
-            //        IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
-            //        if (!interfaceTypes.Any()) continue;
-
-            //        if (type.IsConcrete())
-            //        {
-            //            concretions.Add(type);
-            //        }
-
-            //        foreach (Type interfaceType in interfaceTypes)
-            //        {
-            //            interfaces.Fill(interfaceType);
-            //        }
-            //    }
-
-            //    foreach (var @interface in interfaces)
-            //    {
-            //        concretions
-            //            .Where(t => t.CanBeCastTo(@interface))
-            //            .ToList()
-            //            .ForEach(match => services.TryAddTransient(@interface, match));
-
-            //        if (!@interface.IsOpenGeneric())
-            //        {
-            //            AddConcretionsThatCouldBeClosed(@interface, concretions, services);
-            //        }
-            //    }
-            //}
 
             var multiOpenInterfaces = new[]
             {

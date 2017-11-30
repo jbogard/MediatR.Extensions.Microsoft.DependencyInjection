@@ -9,16 +9,6 @@
         public string Message { get; set; }
     }
 
-    public class PingAsync : IRequest<Pong>
-    {
-        public string Message { get; set; }
-    }
-
-    public class PingCancellableAsync : IRequest<Pong>
-    {
-        public string Message { get; set; }
-    }
-
     public class Pong
     {
         public string Message { get; set; }
@@ -44,76 +34,35 @@
 
     }
 
-    public class PingedAsync : INotification
-    {
-
-    }
-
-    public class GenericAsyncHandler : IAsyncNotificationHandler<INotification>
-    {
-        public Task Handle(INotification notification)
-        {
-            return Task.FromResult(0);
-        }
-    }
-
     public class GenericHandler : INotificationHandler<INotification>
     {
-        public void Handle(INotification notification)
+        public Task Handle(INotification notification, CancellationToken cancellationToken)
         {
-        }
-    }
-
-    public class PingAsyncHandler : IAsyncRequestHandler<PingAsync, Pong>
-    {
-        public Task<Pong> Handle(PingAsync message)
-        {
-            return Task.FromResult(new Pong());
+            return Task.FromResult(0);
         }
     }
 
     public class DingAsyncHandler : IRequestHandler<Ding>
     {
-        public void Handle(Ding message)
+        public Task Handle(Ding message, CancellationToken cancellationToken)
         {
-        }
-    }
-
-    public class PingCancellableAsyncHandler : ICancellableAsyncRequestHandler<PingCancellableAsync, Pong>
-    {
-        public Task<Pong> Handle(PingCancellableAsync message, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new Pong());
-        }
-    }
-
-    public class PingedAsyncHandler : IAsyncNotificationHandler<PingedAsync>
-    {
-        public Task Handle(PingedAsync notification)
-        {
-            return Task.FromResult(0);
-        }
-    }
-
-    public class PingedAlsoAsyncHandler : IAsyncNotificationHandler<PingedAsync>
-    {
-        public Task Handle(PingedAsync notification)
-        {
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
     }
 
     public class PingedHandler : INotificationHandler<Pinged>
     {
-        public void Handle(Pinged notification)
+        public Task Handle(Pinged notification, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
     }
 
     public class PingedAlsoHandler : INotificationHandler<Pinged>
     {
-        public void Handle(Pinged notification)
+        public Task Handle(Pinged notification, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
     }
 
@@ -130,14 +79,14 @@
         {
             _logger = logger;
         }
-        public Pong Handle(Ping message)
+        public Task<Pong> Handle(Ping message, CancellationToken cancellationToken)
         {
             _logger.Messages.Add("Handler");
-            return new Pong { Message = message.Message + " Pong" };
+            return Task.FromResult(new Pong { Message = message.Message + " Pong" });
         }
     }
 
-    public class ZingHandler : IAsyncRequestHandler<Zing, Zong>
+    public class ZingHandler : IRequestHandler<Zing, Zong>
     {
         private readonly Logger _output;
 
@@ -145,7 +94,7 @@
         {
             _output = output;
         }
-        public Task<Zong> Handle(Zing message)
+        public Task<Zong> Handle(Zing message, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Handler");
             return Task.FromResult(new Zong { Message = message.Message + " Zong" });
@@ -155,17 +104,17 @@
     public class DuplicateTest : IRequest<string> { }
     public class DuplicateHandler1 : IRequestHandler<DuplicateTest, string>
     {
-        public string Handle(DuplicateTest message)
+        public Task<string> Handle(DuplicateTest message, CancellationToken cancellationToken)
         {
-            return nameof(DuplicateHandler1);
+            return Task.FromResult(nameof(DuplicateHandler1));
         }
     }
 
     public class DuplicateHandler2 : IRequestHandler<DuplicateTest, string>
     {
-        public string Handle(DuplicateTest message)
+        public Task<string> Handle(DuplicateTest message, CancellationToken cancellationToken)
         {
-            return nameof(DuplicateHandler2);
+            return Task.FromResult(nameof(DuplicateHandler2));
         }
     }
 

@@ -32,27 +32,9 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
 
         [Fact]
-        public void ShouldResolveAsyncRequestHandler()
-        {
-            _provider.GetService<IAsyncRequestHandler<PingAsync, Pong>>().ShouldNotBeNull();
-        }
-
-        [Fact]
-        public void ShouldResolveCancelableAsyncRequestHandler()
-        {
-            _provider.GetService<ICancellableAsyncRequestHandler<PingCancellableAsync, Pong>>().ShouldNotBeNull();
-        }
-
-        [Fact]
         public void ShouldResolveNotificationHandlers()
         {
             _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);
-        }
-
-        [Fact]
-        public void ShouldResolveAsyncNotificationHandlers()
-        {
-            _provider.GetServices<IAsyncNotificationHandler<PingedAsync>>().Count().ShouldBe(3);
         }
     }
 }

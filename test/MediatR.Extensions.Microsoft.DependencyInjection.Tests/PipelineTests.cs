@@ -6,6 +6,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using System.Threading;
     using System.Threading.Tasks;
     using Pipeline;
     using Shouldly;
@@ -22,7 +23,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 _output = output;
             }
 
-            public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next)
+            public async Task<Pong> Handle(Ping request, CancellationToken cancellationToken, RequestHandlerDelegate<Pong> next)
             {
                 _output.Messages.Add("Outer before");
                 var response = await next();
@@ -41,7 +42,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 _output = output;
             }
 
-            public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next)
+            public async Task<Pong> Handle(Ping request, CancellationToken cancellationToken, RequestHandlerDelegate<Pong> next)
             {
                 _output.Messages.Add("Inner before");
                 var response = await next();
@@ -60,7 +61,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 _output = output;
             }
 
-            public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next)
+            public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
             {
                 _output.Messages.Add("Inner generic before");
                 var response = await next();
@@ -79,7 +80,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 _output = output;
             }
 
-            public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next)
+            public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
             {
                 _output.Messages.Add("Outer generic before");
                 var response = await next();
@@ -100,7 +101,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 _output = output;
             }
 
-            public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next)
+            public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
             {
                 _output.Messages.Add("Constrained before");
                 var response = await next();
@@ -118,7 +119,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(TRequest request)
+            public Task Process(TRequest request, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("First pre processor");
                 return Task.FromResult(0);
@@ -133,7 +134,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(TRequest request)
+            public Task Process(TRequest request, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("Next pre processor");
                 return Task.FromResult(0);

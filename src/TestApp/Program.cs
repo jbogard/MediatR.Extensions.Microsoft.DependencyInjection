@@ -54,48 +54,9 @@ namespace TestApp
 
     }
 
-    public class GenericAsyncHandler : IAsyncNotificationHandler<INotification>
-    {
-        public Task Handle(INotification notification)
-        {
-            return Task.FromResult(0);
-        }
-    }
-
     public class GenericHandler : INotificationHandler<INotification>
     {
-        public void Handle(INotification notification)
-        {
-        }
-    }
-
-    public class PingAsyncHandler : IAsyncRequestHandler<PingAsync, Pong>
-    {
-        public Task<Pong> Handle(PingAsync message)
-        {
-            return Task.FromResult(new Pong());
-        }
-    }
-
-    public class PingCancellableAsyncHandler : ICancellableAsyncRequestHandler<PingCancellableAsync, Pong>
-    {
-        public Task<Pong> Handle(PingCancellableAsync message, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new Pong());
-        }
-    }
-
-    public class PingedAsyncHandler : IAsyncNotificationHandler<PingedAsync>
-    {
-        public Task Handle(PingedAsync notification)
-        {
-            return Task.FromResult(0);
-        }
-    }
-
-    public class PingedAlsoAsyncHandler : IAsyncNotificationHandler<PingedAsync>
-    {
-        public Task Handle(PingedAsync notification)
+        public Task Handle(INotification notification, CancellationToken cancellationToken)
         {
             return Task.FromResult(0);
         }
@@ -103,23 +64,25 @@ namespace TestApp
 
     public class PingedHandler : INotificationHandler<Pinged>
     {
-        public void Handle(Pinged notification)
+        public Task Handle(Pinged notification, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
     }
 
     public class PingedAlsoHandler : INotificationHandler<Pinged>
     {
-        public void Handle(Pinged notification)
+        public Task Handle(Pinged notification, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
     }
 
     public class PingHandler : IRequestHandler<Ping, Pong>
     {
-        public Pong Handle(Ping message)
+        public Task<Pong> Handle(Ping message, CancellationToken cancellationToken)
         {
-            return new Pong { Message = message.Message + " Pong" };
+            return Task.FromResult(new Pong { Message = message.Message + " Pong" });
         }
     }
 }
