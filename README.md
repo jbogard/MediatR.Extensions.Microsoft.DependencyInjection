@@ -3,7 +3,7 @@
 Scans assemblies and adds handlers implementations to the container. To use, with an `IServiceCollection` instance:
 
 ```
-services.AddMediatR(typeof(MyHander));
+services.AddMediatR(typeof(MyHandler));
 ```
 
 or with an assembly:
