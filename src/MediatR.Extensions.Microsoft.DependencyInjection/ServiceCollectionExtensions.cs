@@ -23,9 +23,11 @@
         /// Registers handlers and the mediator types from <see cref="AppDomain.CurrentDomain"/>.
         /// </summary>
         /// <param name="services">Service collection</param>
-        public static void AddMediatR(this IServiceCollection services)
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services)
         {
             services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic));
+            return services;
         }
 
         /// <summary>
@@ -33,9 +35,11 @@
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <param name="assemblies">Assemblies to scan</param>
-        public static void AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
         {
             services.AddMediatR(assemblies.AsEnumerable());
+            return services;
         }
 
         /// <summary>
@@ -43,11 +47,14 @@
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <param name="assemblies">Assemblies to scan</param>
-        public static void AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies)
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             AddRequiredServices(services);
 
             AddMediatRClasses(services, assemblies);
+
+            return services;
         }
 
         /// <summary>
@@ -55,9 +62,11 @@
         /// </summary>
         /// <param name="services"></param>
         /// <param name="handlerAssemblyMarkerTypes"></param>
-        public static void AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
         {
             services.AddMediatR(handlerAssemblyMarkerTypes.AsEnumerable());
+            return services;
         }
 
         /// <summary>
@@ -65,10 +74,12 @@
         /// </summary>
         /// <param name="services"></param>
         /// <param name="handlerAssemblyMarkerTypes"></param>
-        public static void AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes)
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes)
         {
             AddRequiredServices(services);
             AddMediatRClasses(services, handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly));
+            return services;
         }
 
 
