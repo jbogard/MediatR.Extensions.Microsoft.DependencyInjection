@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
@@ -13,12 +14,9 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             private readonly Logger _output;
 
-            public ConstructorTestBehavior(Logger output)
-            {
-                _output = output;
-            }
+            public ConstructorTestBehavior(Logger output) => _output = output;
 
-            public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next)
+            public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
             {
                 _output.Messages.Add("ConstructorTestBehavior before");
                 var response = await next();
@@ -45,10 +43,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             private readonly Logger _logger;
             private static int _constructorCallCount;
 
-            public static int ConstructorCallCount
-            {
-                get { return _constructorCallCount; }
-            }
+            public static int ConstructorCallCount => _constructorCallCount;
 
             public static void ResetCallCount()
             {
@@ -66,10 +61,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                     _constructorCallCount++;
                 }
             }
-            public ConstructorTestResponse Handle(ConstructorTestRequest message)
+
+            public Task<ConstructorTestResponse> Handle(ConstructorTestRequest request, CancellationToken cancellationToken)
             {
                 _logger.Messages.Add("Handler");
-                return new ConstructorTestResponse { Message = message.Message + " ConstructorPong" };
+                return Task.FromResult(new ConstructorTestResponse { Message = request.Message + " ConstructorPong" });
             }
         }
 
