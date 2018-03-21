@@ -25,10 +25,7 @@
         /// <param name="services">Service collection</param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services)
-        {
-            services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic));
-            return services;
-        }
+            => services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic));
 
         /// <summary>
         /// Registers handlers and mediator types from the specified assemblies
@@ -37,10 +34,7 @@
         /// <param name="assemblies">Assemblies to scan</param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
-        {
-            services.AddMediatR(assemblies.AsEnumerable());
-            return services;
-        }
+            => services.AddMediatR(assemblies.AsEnumerable());
 
         /// <summary>
         /// Registers handlers and mediator types from the specified assemblies
@@ -64,10 +58,7 @@
         /// <param name="handlerAssemblyMarkerTypes"></param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
-        {
-            services.AddMediatR(handlerAssemblyMarkerTypes.AsEnumerable());
-            return services;
-        }
+            => services.AddMediatR(handlerAssemblyMarkerTypes.AsEnumerable());
 
         /// <summary>
         /// Registers handlers and mediator types from the assemblies that contain the specified types
@@ -81,7 +72,6 @@
             AddMediatRClasses(services, handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly));
             return services;
         }
-
 
         private static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan)
         {
@@ -109,7 +99,7 @@
             {
                 var concretions = new List<Type>();
 
-                foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
+                foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes))
                 {
                     IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(multiOpenInterface).ToArray();
                     if (!interfaceTypes.Any()) continue;
@@ -145,7 +135,7 @@
                 var concretions = new List<Type>();
                 var interfaces = new List<Type>();
 
-                foreach (var type in assembliesToScan.SelectMany(a => a.ExportedTypes))
+                foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes))
                 {
                     IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
                     if (!interfaceTypes.Any()) continue;

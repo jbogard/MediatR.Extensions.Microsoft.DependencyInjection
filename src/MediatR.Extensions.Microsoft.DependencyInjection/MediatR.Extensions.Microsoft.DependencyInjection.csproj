@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>MediatR extensions for ASP.NET Core</Description>
     <Copyright>Copyright Jimmy Bogard</Copyright>
-    <VersionPrefix>4.0.0</VersionPrefix>
+    <VersionPrefix>4.1.0</VersionPrefix>
     <Authors>Jimmy Bogard</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>MediatR.Extensions.Microsoft.DependencyInjection</AssemblyName>
@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
-    <PackageReference Include="MediatR" Version="4.0.0" />
+    <PackageReference Include="MediatR" Version="4.1.0" />
   </ItemGroup>
 
 </Project>

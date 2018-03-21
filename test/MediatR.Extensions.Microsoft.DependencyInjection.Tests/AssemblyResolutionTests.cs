@@ -33,6 +33,12 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
 
         [Fact]
+        public void ShouldResolveInternalHandler()
+        {
+            _provider.GetService<IRequestHandler<InternalPing>>().ShouldNotBeNull();
+        }
+
+        [Fact]
         public void ShouldResolveNotificationHandlers()
         {
             _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);

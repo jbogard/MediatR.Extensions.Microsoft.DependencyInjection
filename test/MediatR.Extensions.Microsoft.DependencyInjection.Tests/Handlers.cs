@@ -34,6 +34,8 @@
 
     }
 
+    class InternalPing : IRequest { }
+
     public class GenericHandler : INotificationHandler<INotification>
     {
         public Task Handle(INotification notification, CancellationToken cancellationToken)
@@ -118,4 +120,8 @@
         }
     }
 
+    class InternalPingHandler : IRequestHandler<InternalPing>
+    {
+        public Task Handle(InternalPing request, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
 }
