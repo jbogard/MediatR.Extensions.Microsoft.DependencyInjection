@@ -55,7 +55,7 @@ foreach ($test in ls test/*.Tests) {
 	echo "build: Testing project in $test"
 
 	try {
-		& dotnet xunit -configuration Release --no-build
+		& dotnet xunit -configuration Release --no-build --fx-version 2.0.0
 		if($LASTEXITCODE -ne 0) { exit 3 }
 	} finally {
 		Pop-Location
