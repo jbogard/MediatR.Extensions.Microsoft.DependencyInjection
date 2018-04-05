@@ -54,10 +54,12 @@ foreach ($test in ls test/*.Tests) {
 
 	echo "build: Testing project in $test"
 
-    & dotnet test -c Release
-    if($LASTEXITCODE -ne 0) { exit 3 }
-
-    Pop-Location
+	try {
+		& dotnet xunit -configuration Release --no-build
+		if($LASTEXITCODE -ne 0) { exit 3 }
+	} finally {
+		Pop-Location
+	}
 }
 
 exec { dotnet pack .\src\MediatR.Extensions.Microsoft.DependencyInjection -c Release -o ..\..\artifacts --include-symbols --no-build $versionSuffix }

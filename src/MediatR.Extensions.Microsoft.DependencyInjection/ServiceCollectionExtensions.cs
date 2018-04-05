@@ -80,7 +80,6 @@
             var openRequestInterfaces = new[]
             {
                 typeof(IRequestHandler<,>),
-                typeof(IRequestHandler<>)
             };
             var openNotificationHandlerInterfaces = new[]
             {
@@ -255,8 +254,7 @@
 
         private static void AddRequiredServices(IServiceCollection services)
         {
-            services.AddScoped<SingleInstanceFactory>(p => t => p.GetService(t));
-            services.AddScoped<MultiInstanceFactory>(p => t => p.GetServices(t));
+            services.AddScoped<ServiceFactory>(p => p.GetService);
             services.AddScoped<IMediator, Mediator>();
         }
     }

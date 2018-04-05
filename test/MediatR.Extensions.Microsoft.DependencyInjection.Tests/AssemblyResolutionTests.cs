@@ -35,7 +35,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         [Fact]
         public void ShouldResolveInternalHandler()
         {
-            _provider.GetService<IRequestHandler<InternalPing>>().ShouldNotBeNull();
+            _provider.GetService<IRequestHandler<InternalPing, Unit>>().ShouldNotBeNull();
         }
 
         [Fact]

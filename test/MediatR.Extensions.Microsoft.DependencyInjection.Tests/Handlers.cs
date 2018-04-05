@@ -46,10 +46,7 @@
 
     public class DingAsyncHandler : IRequestHandler<Ding>
     {
-        public Task Handle(Ding message, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+        public Task<Unit> Handle(Ding message, CancellationToken cancellationToken) => Unit.Task;
     }
 
     public class PingedHandler : INotificationHandler<Pinged>
@@ -122,6 +119,6 @@
 
     class InternalPingHandler : IRequestHandler<InternalPing>
     {
-        public Task Handle(InternalPing request, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<Unit> Handle(InternalPing request, CancellationToken cancellationToken) => Unit.Task;
     }
 }

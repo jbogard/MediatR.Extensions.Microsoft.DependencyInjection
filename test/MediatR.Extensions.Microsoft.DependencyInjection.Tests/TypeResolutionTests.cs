@@ -35,7 +35,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         [Fact]
         public void ShouldResolveVoidRequestHandler()
         {
-            _provider.GetService<IRequestHandler<Ding>>().ShouldNotBeNull();
+            _provider.GetService<IRequestHandler<Ding, Unit>>().ShouldNotBeNull();
         }
 
         [Fact]
