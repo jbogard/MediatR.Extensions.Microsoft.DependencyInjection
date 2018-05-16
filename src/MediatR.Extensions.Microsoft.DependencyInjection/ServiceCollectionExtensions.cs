@@ -158,6 +158,10 @@
 
                     if (addIfAlreadyExists)
                     {
+                        matches.ForEach(match => services.AddTransient(@interface, match));
+                    }
+                    else
+                    {
                         if (matches.Count() > 1)
                         {
                             // if there are multiple matches, only keep the one that fits exactly (T2 == T1)
@@ -165,10 +169,6 @@
                             matches.RemoveAll(m => !m.BaseType.GenericTypeArguments[0].Equals(@interface.GenericTypeArguments[0]));
                         }
 
-                        matches.ForEach(match => services.AddTransient(@interface, match));
-                    }
-                    else
-                    {
                         matches.ForEach(match => services.TryAddTransient(@interface, match));
                     }
 
