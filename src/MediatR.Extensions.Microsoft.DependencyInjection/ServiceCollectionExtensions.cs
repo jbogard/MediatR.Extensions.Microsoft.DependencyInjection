@@ -164,9 +164,7 @@
                     {
                         if (matches.Count() > 1)
                         {
-                            // if there are multiple matches, only keep the one that fits exactly (T2 == T1)
-                            // assumes @interface is of type IRequestHandler<T1,...> and @match is of a derived type of AsyncRequestHandler<T2,...>
-                            matches.RemoveAll(m => !m.BaseType.GenericTypeArguments[0].Equals(@interface.GenericTypeArguments[0]));
+                            matches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
                         }
 
                         matches.ForEach(match => services.TryAddTransient(@interface, match));
@@ -178,6 +176,28 @@
                     }
                 }
             }
+        }
+
+        private static bool IsMatchingWithInterface(Type handlerType, Type handlerInterface)
+        {
+            if (handlerType == null || handlerInterface == null)
+            {
+                return false;
+            }
+
+            if (handlerType.IsInterface)
+            {
+                if (handlerType.GenericTypeArguments.SequenceEqual(handlerInterface.GenericTypeArguments))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                return IsMatchingWithInterface(handlerType.GetInterface(handlerInterface.Name), handlerInterface);
+            }
+
+            return false;
         }
 
         private static void AddConcretionsThatCouldBeClosed(Type @interface, List<Type> concretions, IServiceCollection services)
