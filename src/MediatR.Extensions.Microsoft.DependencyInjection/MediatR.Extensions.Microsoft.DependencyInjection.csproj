@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Description>MediatR extensions for ASP.NET Core</Description>
@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
-    <PackageReference Include="MediatR" Version="5.0.1-alpha-0002" />
+    <PackageReference Include="MediatR" Version="5.0.1" />
   </ItemGroup>
 
 </Project>
