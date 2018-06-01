@@ -45,8 +45,6 @@ $versionSuffix = @{ $true = "--version-suffix=$($suffix)"; $false = ""}[$suffix 
 echo "build: Package version suffix is $suffix"
 echo "build: Build version suffix is $buildSuffix" 
 	
-exec { dotnet restore }
-
 exec { dotnet build -c Release --version-suffix=$buildSuffix -v q /nologo }
 
 foreach ($test in ls test/*.Tests) {
@@ -55,7 +53,7 @@ foreach ($test in ls test/*.Tests) {
 	echo "build: Testing project in $test"
 
 	try {
-		& dotnet xunit -configuration Release --no-build --fx-version 2.0.0
+		& dotnet test -c Release --no-build --no-restore
 		if($LASTEXITCODE -ne 0) { exit 3 }
 	} finally {
 		Pop-Location

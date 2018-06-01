@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <AssemblyName>MediatR.Extensions.Microsoft.DependencyInjection.Tests</AssemblyName>
     <PackageId>MediatR.Extensions.Microsoft.DependencyInjection.Tests</PackageId>
@@ -16,12 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="Shouldly" Version="3.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
-    <PackageReference Include="structuremap" Version="4.5.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.0" />
+    <PackageReference Include="structuremap" Version="4.6.1" />
     <PackageReference Include="xunit" Version="2.3.1" />
   </ItemGroup>
 

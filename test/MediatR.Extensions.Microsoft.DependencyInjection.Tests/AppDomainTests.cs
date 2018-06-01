@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿#if NETCOREAPP2_1
+using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
@@ -38,3 +40,4 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
     }
 }
+#endif

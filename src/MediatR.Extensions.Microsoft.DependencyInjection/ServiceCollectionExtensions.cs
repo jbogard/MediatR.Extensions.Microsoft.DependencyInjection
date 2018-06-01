@@ -1,4 +1,6 @@
-﻿namespace MediatR
+﻿using System.Collections;
+
+namespace MediatR
 {
     using System;
     using System.Collections.Generic;
@@ -12,7 +14,7 @@
     /// Extensions to scan for MediatR handlers and registers them.
     /// - Scans for any handler interface implementations and registers them as <see cref="ServiceLifetime.Transient"/>
     /// - Scans for any <see cref="IRequestPreProcessor{TRequest}"/> and <see cref="IRequestPostProcessor{TRequest,TResponse}"/> implementations and registers them as scoped instances
-    /// Registers <see cref="SingleInstanceFactory"/>, <see cref="MultiInstanceFactory"/> and <see cref="IMediator"/> as scoped instances
+    /// Registers <see cref="ServiceFactory"/> and <see cref="IMediator"/> as scoped instances
     /// After calling AddMediatR you can use the container to resolve an <see cref="IMediator"/> instance.
     /// This does not scan for any <see cref="IPipelineBehavior{TRequest,TResponse}"/> instances including <see cref="RequestPreProcessorBehavior{TRequest,TResponse}"/> and <see cref="RequestPreProcessorBehavior{TRequest,TResponse}"/>.
     /// To register behaviors, use the <see cref="ServiceCollectionServiceExtensions.AddTransient(IServiceCollection,Type,Type)"/> with the open generic or closed generic types.
@@ -254,7 +256,48 @@
 
         private static void AddRequiredServices(IServiceCollection services)
         {
-            services.AddScoped<ServiceFactory>(p => p.GetService);
+            services.AddScoped<ServiceFactory>(p => (type =>
+            {
+                try
+                {
+                    return p.GetService(type);
+                }
+                catch (ArgumentException)
+                {
+                    // Let's assume it's a constrained generic type
+                    if (type.IsConstructedGenericType &&
+                        type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    {
+                        var serviceType = type.GenericTypeArguments.Single();
+                        var serviceTypes = new List<Type>();
+                        foreach (var service in services)
+                        {
+                            if (serviceType.IsConstructedGenericType &&
+                                serviceType.GetGenericTypeDefinition() == service.ServiceType)
+                            {
+                                try
+                                {
+                                    var closedImplType = service.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
+                                    serviceTypes.Add(closedImplType);
+                                } catch { }
+                            }
+                        }
+
+                        services.Replace(new ServiceDescriptor(type, sp =>
+                        {
+                            return serviceTypes.Select(sp.GetService).ToArray();
+                        }, ServiceLifetime.Transient));
+
+                        var resolved = Array.CreateInstance(serviceType, serviceTypes.Count);
+                        
+                        Array.Copy(serviceTypes.Select(p.GetService).ToArray(), resolved, serviceTypes.Count);
+
+                        return resolved;
+                    }
+
+                    throw;
+                }
+            }));
             services.AddScoped<IMediator, Mediator>();
         }
     }
