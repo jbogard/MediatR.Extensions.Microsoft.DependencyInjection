@@ -7,8 +7,8 @@ namespace MediatR
     using System.Linq;
     using System.Reflection;
     using Microsoft.Extensions.DependencyInjection;
-    using Pipeline;
     using Microsoft.Extensions.DependencyInjection.Extensions;
+    using Pipeline;
 
     /// <summary>
     /// Extensions to scan for MediatR handlers and registers them.
@@ -126,9 +126,9 @@ namespace MediatR
         /// <param name="services"></param>
         /// <param name="assembliesToScan"></param>
         /// <param name="addIfAlreadyExists"></param>
-        private static void AddInterfacesAsTransient(Type[] openRequestInterfaces, 
-            IServiceCollection services, 
-            IEnumerable<Assembly> assembliesToScan, 
+        private static void AddInterfacesAsTransient(Type[] openRequestInterfaces,
+            IServiceCollection services,
+            IEnumerable<Assembly> assembliesToScan,
             bool addIfAlreadyExists)
         {
             foreach (var openInterface in openRequestInterfaces)
@@ -157,15 +157,19 @@ namespace MediatR
                     var matches = concretions
                         .Where(t => t.CanBeCastTo(@interface))
                         .ToList();
+
                     if (addIfAlreadyExists)
                     {
-                        matches
-                            .ForEach(match => services.AddTransient(@interface, match));
+                        matches.ForEach(match => services.AddTransient(@interface, match));
                     }
                     else
                     {
-                        matches
-                            .ForEach(match => services.TryAddTransient(@interface, match));
+                        if (matches.Count() > 1)
+                        {
+                            matches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
+                        }
+
+                        matches.ForEach(match => services.TryAddTransient(@interface, match));
                     }
 
                     if (!@interface.IsOpenGeneric())
@@ -174,6 +178,28 @@ namespace MediatR
                     }
                 }
             }
+        }
+
+        private static bool IsMatchingWithInterface(Type handlerType, Type handlerInterface)
+        {
+            if (handlerType == null || handlerInterface == null)
+            {
+                return false;
+            }
+
+            if (handlerType.IsInterface)
+            {
+                if (handlerType.GenericTypeArguments.SequenceEqual(handlerInterface.GenericTypeArguments))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                return IsMatchingWithInterface(handlerType.GetInterface(handlerInterface.Name), handlerInterface);
+            }
+
+            return false;
         }
 
         private static void AddConcretionsThatCouldBeClosed(Type @interface, List<Type> concretions, IServiceCollection services)

@@ -9,6 +9,10 @@
         public string Message { get; set; }
     }
 
+    public class DerivedPing : Ping
+    {
+    }
+
     public class Pong
     {
         public string Message { get; set; }
@@ -82,6 +86,21 @@
         {
             _logger.Messages.Add("Handler");
             return Task.FromResult(new Pong { Message = message.Message + " Pong" });
+        }
+    }
+
+    public class DerivedPingHandler : IRequestHandler<DerivedPing, Pong>
+    {
+        private readonly Logger _logger;
+
+        public DerivedPingHandler(Logger logger)
+        {
+            _logger = logger;
+        }
+        public Task<Pong> Handle(DerivedPing message, CancellationToken cancellationToken)
+        {
+            _logger.Messages.Add("Handler");
+            return Task.FromResult(new Pong { Message = $"Derived{message.Message} Pong" });
         }
     }
 
