@@ -77,7 +77,7 @@ namespace MediatR
 
         private static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan)
         {
-            assembliesToScan = assembliesToScan as Assembly[] ?? assembliesToScan.ToArray();
+            assembliesToScan = (assembliesToScan as Assembly[] ?? assembliesToScan).Distinct().ToArray();
 
             var openRequestInterfaces = new[]
             {
