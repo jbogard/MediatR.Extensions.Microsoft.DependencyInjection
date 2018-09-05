@@ -280,6 +280,8 @@ namespace MediatR
             list.Add(value);
         }
 
+        private static readonly object _lockObject = new object();
+
         private static void AddRequiredServices(IServiceCollection services)
         {
             services.AddScoped<ServiceFactory>(p => (type =>
@@ -296,23 +298,27 @@ namespace MediatR
                     {
                         var serviceType = type.GenericTypeArguments.Single();
                         var serviceTypes = new List<Type>();
-                        foreach (var service in services)
-                        {
-                            if (serviceType.IsConstructedGenericType &&
-                                serviceType.GetGenericTypeDefinition() == service.ServiceType)
-                            {
-                                try
-                                {
-                                    var closedImplType = service.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
-                                    serviceTypes.Add(closedImplType);
-                                } catch { }
-                            }
-                        }
 
-                        services.Replace(new ServiceDescriptor(type, sp =>
-                        {
-                            return serviceTypes.Select(sp.GetService).ToArray();
-                        }, ServiceLifetime.Transient));
+                        lock(_lockObject)
+                        { 
+                            foreach (var service in services)
+                            {
+                                if (serviceType.IsConstructedGenericType &&
+                                    serviceType.GetGenericTypeDefinition() == service.ServiceType)
+                                {
+                                    try
+                                    {
+                                        var closedImplType = service.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
+                                        serviceTypes.Add(closedImplType);
+                                    } catch { }
+                                }
+                            }
+
+                            services.Replace(new ServiceDescriptor(type, sp =>
+                            {
+                                return serviceTypes.Select(sp.GetService).ToArray();
+                            }, ServiceLifetime.Transient));
+                        }
 
                         var resolved = Array.CreateInstance(serviceType, serviceTypes.Count);
                         
