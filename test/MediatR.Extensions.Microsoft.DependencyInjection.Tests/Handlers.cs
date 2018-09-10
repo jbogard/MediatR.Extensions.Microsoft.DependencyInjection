@@ -140,4 +140,18 @@
     {
         public Task<Unit> Handle(InternalPing request, CancellationToken cancellationToken) => Unit.Task;
     }
+
+    class MyCustomMediator : IMediator
+    {
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
 }
