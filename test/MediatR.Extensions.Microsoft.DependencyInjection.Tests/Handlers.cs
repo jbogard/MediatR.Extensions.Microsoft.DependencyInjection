@@ -3,8 +3,19 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using MediatR.Attributes;
 
     public class Ping : IRequest<Pong>
+    {
+        public string Message { get; set; }
+    }
+
+    public interface IPong
+    {
+        string Message { get; set; }
+    }
+
+    public class OverwriteablePing : IRequest<IPong>
     {
         public string Message { get; set; }
     }
@@ -13,9 +24,14 @@
     {
     }
 
-    public class Pong
+    public class Pong : IPong
     {
         public string Message { get; set; }
+    }
+
+    public class OverwrittenPong : Pong
+    {
+        public bool IsOverwritten { get; set; }
     }
 
     public class Zing : IRequest<Zong>
@@ -101,6 +117,37 @@
         {
             _logger.Messages.Add("Handler");
             return Task.FromResult(new Pong { Message = $"Derived{message.Message} Pong" });
+        }
+    }
+
+    [Overwriteable]
+    public class OverwriteablePingHandler : IRequestHandler<OverwriteablePing, IPong>
+    {
+        private readonly Logger _logger;
+
+        public OverwriteablePingHandler(Logger logger)
+        {
+            _logger = logger;
+        }
+        public Task<IPong> Handle(OverwriteablePing message, CancellationToken cancellationToken)
+        {
+            _logger.Messages.Add("Handler");
+            return Task.FromResult((IPong)new Pong { Message = $"Overwriteable {message.Message} Pong" });
+        }
+    }
+
+    public class OverwrittenPingHandler : IRequestHandler<OverwriteablePing, IPong>
+    {
+        private readonly Logger _logger;
+
+        public OverwrittenPingHandler(Logger logger)
+        {
+            _logger = logger;
+        }
+        public Task<IPong> Handle(OverwriteablePing message, CancellationToken cancellationToken)
+        {
+            _logger.Messages.Add("Handler");
+            return Task.FromResult((IPong)new OverwrittenPong { Message = $"Overwritten {message.Message} Pong", IsOverwritten = true });
         }
     }
 

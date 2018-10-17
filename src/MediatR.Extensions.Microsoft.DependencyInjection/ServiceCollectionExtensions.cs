@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace MediatR
+﻿namespace MediatR
 {
     using System;
     using System.Collections.Generic;
@@ -169,6 +167,11 @@ namespace MediatR
                             matches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
                         }
 
+                        if (matches.Count() > 1 && matches.Any(m => Attribute.IsDefined(m, typeof(OverwriteableAttribute))))
+                        {
+                            matches.RemoveAll(m => Attribute.IsDefined(m, typeof(OverwriteableAttribute)));
+                        }
+
                         matches.ForEach(match => services.TryAddTransient(@interface, match));
                     }
 
@@ -315,7 +318,7 @@ namespace MediatR
                         }, ServiceLifetime.Transient));
 
                         var resolved = Array.CreateInstance(serviceType, serviceTypes.Count);
-                        
+
                         Array.Copy(serviceTypes.Select(p.GetService).ToArray(), resolved, serviceTypes.Count);
 
                         return resolved;
