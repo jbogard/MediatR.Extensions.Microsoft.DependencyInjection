@@ -296,7 +296,7 @@ namespace MediatR
                     {
                         var serviceType = type.GenericTypeArguments.Single();
                         var serviceTypes = new List<Type>();
-                        foreach (var service in services)
+                        foreach (var service in services.ToList())
                         {
                             if (serviceType.IsConstructedGenericType &&
                                 serviceType.GetGenericTypeDefinition() == service.ServiceType)
