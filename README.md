@@ -13,3 +13,9 @@ services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 ```
 
 Supports generic variance of handlers.
+
+To customize registration, such as lifecycle or the registration type:
+
+```c#
+services.AddMediatR(cfg => cfg.Using<MyCustomMediator>().AsSingleton(), typeof(Startup));
+```
