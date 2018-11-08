@@ -1,47 +1,42 @@
-﻿namespace MediatR
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace MediatR
 {
     using System;
 
-    public class MediatrServiceConfiguration
+    public class MediatRServiceConfiguration
     {
-        public Type MediatorImpl { get; private set; }
-        public Lifetime Lifetime { get; private set; }
+        public Type MediatorImplementationType { get; private set; }
+        public ServiceLifetime Lifetime { get; private set; }
 
-        public MediatrServiceConfiguration()
+        public MediatRServiceConfiguration()
         {
-            MediatorImpl = typeof(Mediator);
-            Lifetime = Lifetime.Scopped;
+            MediatorImplementationType = typeof(Mediator);
+            Lifetime = ServiceLifetime.Scoped;
         }
 
-        public MediatrServiceConfiguration Using<TMediator>() where TMediator : IMediator
+        public MediatRServiceConfiguration Using<TMediator>() where TMediator : IMediator
         {
-            MediatorImpl = typeof(TMediator);
+            MediatorImplementationType = typeof(TMediator);
             return this;
         }
 
-        public MediatrServiceConfiguration AsSingleton()
+        public MediatRServiceConfiguration AsSingleton()
         {
-            Lifetime = Lifetime.Singleton;
+            Lifetime = ServiceLifetime.Singleton;
             return this;
         }
 
-        public MediatrServiceConfiguration AsScopped()
+        public MediatRServiceConfiguration AsScoped()
         {
-            Lifetime = Lifetime.Scopped;
+            Lifetime = ServiceLifetime.Scoped;
             return this;
         }
 
-        public MediatrServiceConfiguration AsTransient()
+        public MediatRServiceConfiguration AsTransient()
         {
-            Lifetime = Lifetime.Transient;
+            Lifetime = ServiceLifetime.Transient;
             return this;
         }
-    }
-
-    public enum Lifetime
-    {
-        Singleton,
-        Scopped,
-        Transient
     }
 }

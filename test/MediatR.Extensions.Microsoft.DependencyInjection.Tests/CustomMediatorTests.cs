@@ -1,5 +1,4 @@
-﻿#if NETCOREAPP2_1
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
@@ -16,7 +15,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
-            services.AddMediatR(cfg => cfg.Using<MyCustomMediator>());
+            services.AddMediatR(cfg => cfg.Using<MyCustomMediator>(), typeof(CustomMediatorTests));
             _provider = services.BuildServiceProvider();
         }
 
@@ -40,4 +39,3 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
     }
 }
-#endif

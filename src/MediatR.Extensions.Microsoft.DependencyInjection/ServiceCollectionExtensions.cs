@@ -19,8 +19,6 @@ namespace MediatR
     /// </summary>
     public static class ServiceCollectionExtensions
     {
-        public static readonly MediatrServiceConfiguration Configuration = new MediatrServiceConfiguration();
-
         /// <summary>
         /// Registers handlers and the mediator types from <see cref="AppDomain.CurrentDomain"/>.
         /// </summary>
@@ -35,7 +33,7 @@ namespace MediatR
         /// <param name="services">Service collection</param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatrServiceConfiguration> configuration)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatRServiceConfiguration> configuration)
             => services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic), configuration);
 
         /// <summary>
@@ -54,7 +52,7 @@ namespace MediatR
         /// <param name="assemblies">Assemblies to scan</param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatrServiceConfiguration> configuration, params Assembly[] assemblies)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatRServiceConfiguration> configuration, params Assembly[] assemblies)
             => services.AddMediatR(assemblies.AsEnumerable(), configuration);
 
         /// <summary>
@@ -64,11 +62,13 @@ namespace MediatR
         /// <param name="assemblies">Assemblies to scan</param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies, Action<MediatrServiceConfiguration> configuration)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies, Action<MediatRServiceConfiguration> configuration)
         {
-            configuration?.Invoke(Configuration);
+            var serviceConfig = new MediatRServiceConfiguration();
 
-            AddRequiredServices(services);
+            configuration?.Invoke(serviceConfig);
+
+            AddRequiredServices(services, serviceConfig);
 
             AddMediatRClasses(services, assemblies);
 
@@ -91,7 +91,7 @@ namespace MediatR
         /// <param name="handlerAssemblyMarkerTypes"></param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatrServiceConfiguration> configuration, params Type[] handlerAssemblyMarkerTypes)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatRServiceConfiguration> configuration, params Type[] handlerAssemblyMarkerTypes)
             => services.AddMediatR(handlerAssemblyMarkerTypes.AsEnumerable(), configuration);
 
         /// <summary>
@@ -101,10 +101,11 @@ namespace MediatR
         /// <param name="handlerAssemblyMarkerTypes"></param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes, Action<MediatrServiceConfiguration> configuration)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes, Action<MediatRServiceConfiguration> configuration)
         {
-            configuration?.Invoke(Configuration);
-            AddRequiredServices(services);
+            var serviceConfig = new MediatRServiceConfiguration();
+            configuration?.Invoke(serviceConfig);
+            AddRequiredServices(services, serviceConfig);
             AddMediatRClasses(services, handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly));
             return services;
         }
@@ -314,9 +315,9 @@ namespace MediatR
             list.Add(value);
         }
 
-        private static void AddRequiredServices(IServiceCollection services)
+        private static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
         {
-            services.AddScoped<ServiceFactory>(p => (type =>
+            services.AddScoped<ServiceFactory>(p => type =>
             {
                 try
                 {
@@ -357,20 +358,8 @@ namespace MediatR
 
                     throw;
                 }
-            }));
-            switch (Configuration.Lifetime)
-            {
-                default:
-                case Lifetime.Scopped:
-                    services.AddScoped(typeof(IMediator), Configuration.MediatorImpl);
-                    break;
-                case Lifetime.Transient:
-                    services.AddTransient(typeof(IMediator), Configuration.MediatorImpl);
-                    break;
-                case Lifetime.Singleton:
-                    services.AddSingleton(typeof(IMediator), Configuration.MediatorImpl);
-                    break;
-            }
+            });
+            services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
         }
     }
 }
