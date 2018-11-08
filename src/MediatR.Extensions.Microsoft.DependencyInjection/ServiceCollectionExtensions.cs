@@ -305,7 +305,7 @@ namespace MediatR
                                 {
                                     var closedImplType = service.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
                                     serviceTypes.Add(closedImplType);
-                                } catch { }
+                                } catch (ArgumentException) { }
                             }
                         }
 
