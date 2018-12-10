@@ -1,6 +1,6 @@
 # MediatR extensions for Microsoft.Extensions.DependencyInjection
 
-Scans assemblies and adds handlers implementations to the container. To use, with an `IServiceCollection` instance:
+Scans assemblies and adds handlers, preprocessors, and postprocessors implementations to the container. To use, with an `IServiceCollection` instance:
 
 ```
 services.AddMediatR(typeof(MyHandler));
@@ -19,3 +19,5 @@ To customize registration, such as lifecycle or the registration type:
 ```c#
 services.AddMediatR(cfg => cfg.Using<MyCustomMediator>().AsSingleton(), typeof(Startup));
 ```
+
+To register behaviors, pre- or post-processors, register them individually before or after calling `AddMediatR`.
