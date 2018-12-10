@@ -27,17 +27,19 @@ namespace TestApp
             services.AddSingleton<TextWriter>(writer);
 
             //Pipeline
-            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
-            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
-            services.AddScoped(typeof(IRequestPreProcessor<>), typeof(GenericRequestPreProcessor<>));
-            services.AddScoped(typeof(IRequestPostProcessor<,>), typeof(GenericRequestPostProcessor<,>));
 
             //This causes a type load exception. https://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection/issues/12
             //services.AddScoped(typeof(IRequestPostProcessor<,>), typeof(ConstrainedRequestPostProcessor<,>));
             //services.AddScoped(typeof(INotificationHandler<>), typeof(ConstrainedPingedHandler<>));
 
             services.AddMediatR(typeof(Ping));
+
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
+
+            foreach (var service in services)
+            {
+                Console.WriteLine(service.ServiceType + " - " + service.ImplementationType);
+            }
 
             var provider = services.BuildServiceProvider();
 

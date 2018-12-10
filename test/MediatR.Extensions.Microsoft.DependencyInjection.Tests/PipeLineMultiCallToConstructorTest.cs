@@ -92,7 +92,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             output.Messages.ShouldBe(new[]
             {
                 "ConstructorTestBehavior before",
+                "First pre processor",
+                "Next pre processor",
                 "Handler",
+                "First post processor",
+                "Next post processor",
                 "ConstructorTestBehavior after"
             });
             ConstructorTestHandler.ConstructorCallCount.ShouldBe(1);

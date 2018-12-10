@@ -191,7 +191,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 "Outer before",
                 "Inner before",
+                "First pre processor",
+                "Next pre processor",
                 "Handler",
+                "First post processor",
+                "Next post processor",
                 "Inner after",
                 "Outer after"
             });
@@ -219,7 +223,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 "Outer generic before",
                 "Inner generic before",
+                "First pre processor",
+                "Next pre processor",
                 "Handler",
+                "First post processor",
+                "Next post processor",
                 "Inner generic after",
                 "Outer generic after",
             });
@@ -231,8 +239,6 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             var output = new Logger();
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(output);
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
             services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
             var provider = services.BuildServiceProvider();
 

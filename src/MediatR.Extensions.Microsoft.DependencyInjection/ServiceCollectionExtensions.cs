@@ -317,48 +317,9 @@ namespace MediatR
 
         private static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
         {
-            services.AddScoped<ServiceFactory>(p => type =>
-            {
-                try
-                {
-                    return p.GetService(type);
-                }
-                catch (ArgumentException)
-                {
-                    // Let's assume it's a constrained generic type
-                    if (type.IsConstructedGenericType &&
-                        type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    {
-                        var serviceType = type.GenericTypeArguments.Single();
-                        var serviceTypes = new List<Type>();
-                        foreach (var service in services.ToList())
-                        {
-                            if (serviceType.IsConstructedGenericType &&
-                                serviceType.GetGenericTypeDefinition() == service.ServiceType)
-                            {
-                                try
-                                {
-                                    var closedImplType = service.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
-                                    serviceTypes.Add(closedImplType);
-                                } catch (ArgumentException) { }
-                            }
-                        }
-
-                        services.Replace(new ServiceDescriptor(type, sp =>
-                        {
-                            return serviceTypes.Select(sp.GetService).ToArray();
-                        }, ServiceLifetime.Transient));
-
-                        var resolved = Array.CreateInstance(serviceType, serviceTypes.Count);
-
-                        Array.Copy(serviceTypes.Select(p.GetService).ToArray(), resolved, serviceTypes.Count);
-
-                        return resolved;
-                    }
-
-                    throw;
-                }
-            });
+            services.AddScoped<ServiceFactory>(p => p.GetService);
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
             services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
         }
     }
