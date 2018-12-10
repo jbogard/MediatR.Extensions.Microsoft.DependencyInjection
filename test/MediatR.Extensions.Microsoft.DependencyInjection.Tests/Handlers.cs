@@ -143,6 +143,11 @@
 
     class MyCustomMediator : IMediator
     {
+        public Task Publish(object notification, CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new System.NotImplementedException();
+        }
+
         public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
         {
             throw new System.NotImplementedException();
