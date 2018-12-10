@@ -1,88 +1,48 @@
 ﻿using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR.Pipeline;
 
 namespace TestApp
 {
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static Task Main(string[] args)
         {
-            IServiceCollection services = new ServiceCollection();
-            services.AddMediatR();
-//            var provider = services.BuildServiceProvider();
+            var writer = new WrappingWriter(Console.Out);
+            var mediator = BuildMediator(writer);
+            return Runner.Run(mediator, writer, "ASP.NET Core DI");
+        }
 
-            foreach (var service in services)
-            {
-                Console.WriteLine(service.ServiceType + " - " + service.ImplementationType);
-            }
-            Console.ReadKey();
+        private static IMediator BuildMediator(WrappingWriter writer)
+        {
+            var services = new ServiceCollection();
+
+            services.AddScoped<ServiceFactory>(p => p.GetService);
+
+            services.AddSingleton<TextWriter>(writer);
+
+            //Pipeline
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
+            services.AddScoped(typeof(IRequestPreProcessor<>), typeof(GenericRequestPreProcessor<>));
+            services.AddScoped(typeof(IRequestPostProcessor<,>), typeof(GenericRequestPostProcessor<,>));
+
+            //This causes a type load exception. https://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection/issues/12
+            //services.AddScoped(typeof(IRequestPostProcessor<,>), typeof(ConstrainedRequestPostProcessor<,>));
+            //services.AddScoped(typeof(INotificationHandler<>), typeof(ConstrainedPingedHandler<>));
+
+            services.AddMediatR(typeof(Ping));
+
+            var provider = services.BuildServiceProvider();
+
+            return provider.GetRequiredService<IMediator>();
         }
     }
-
-
-    public class Ping : IRequest<Pong>
-    {
-        public string Message { get; set; }
-    }
-
-    public class PingAsync : IRequest<Pong>
-    {
-        public string Message { get; set; }
-    }
-
-    public class PingCancellableAsync : IRequest<Pong>
-    {
-        public string Message { get; set; }
-    }
-
-    public class Pong
-    {
-        public string Message { get; set; }
-    }
-
-    public class Pinged : INotification
-    {
-
-    }
-
-    public class PingedAsync : INotification
-    {
-
-    }
-
-    public class GenericHandler : INotificationHandler<INotification>
-    {
-        public Task Handle(INotification notification, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(0);
-        }
-    }
-
-    public class PingedHandler : INotificationHandler<Pinged>
-    {
-        public Task Handle(Pinged notification, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-    }
-
-    public class PingedAlsoHandler : INotificationHandler<Pinged>
-    {
-        public Task Handle(Pinged notification, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-    }
-
-    public class PingHandler : IRequestHandler<Ping, Pong>
-    {
-        public Task<Pong> Handle(Ping message, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new Pong { Message = message.Message + " Pong" });
-        }
-    }
+    
 }
