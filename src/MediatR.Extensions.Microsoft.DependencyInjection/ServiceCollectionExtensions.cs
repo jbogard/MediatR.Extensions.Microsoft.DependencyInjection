@@ -114,41 +114,30 @@ namespace MediatR
         {
             assembliesToScan = (assembliesToScan as Assembly[] ?? assembliesToScan).Distinct().ToArray();
 
-            var openRequestInterfaces = new[]
-            {
-                typeof(IRequestHandler<,>),
-            };
-            var openNotificationHandlerInterfaces = new[]
-            {
-                typeof(INotificationHandler<>),
-            };
-            AddInterfacesAsTransient(openRequestInterfaces, services, assembliesToScan, false);
-            AddInterfacesAsTransient(openNotificationHandlerInterfaces, services, assembliesToScan, true);
+            ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false);
+            ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true);
+            ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, false);
+            ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, false);
 
             var multiOpenInterfaces = new[]
             {
+                typeof(INotificationHandler<>),
                 typeof(IRequestPreProcessor<>),
                 typeof(IRequestPostProcessor<,>)
             };
 
             foreach (var multiOpenInterface in multiOpenInterfaces)
             {
-                var concretions = new List<Type>();
+                var concretions = assembliesToScan
+                    .SelectMany(a => a.DefinedTypes)
+                    .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
+                    .Where(type => type.IsConcrete() && type.IsOpenGeneric())
+                    .ToList();
 
-                foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes))
+                foreach (var type in concretions)
                 {
-                    IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(multiOpenInterface).ToArray();
-                    if (!interfaceTypes.Any()) continue;
-
-                    if (type.IsConcrete())
-                    {
-                        concretions.Add(type);
-                    }
+                    services.AddTransient(multiOpenInterface, type);
                 }
-
-                // Always add every pre/post processor
-                concretions
-                    .ForEach(c => services.AddTransient(multiOpenInterface, c));
             }
         }
 
@@ -157,60 +146,59 @@ namespace MediatR
         /// Request handlers should only be added once (so set addIfAlreadyExists to false)
         /// Notification handlers should all be added (set addIfAlreadyExists to true)
         /// </summary>
-        /// <param name="openRequestInterfaces"></param>
+        /// <param name="openRequestInterface"></param>
         /// <param name="services"></param>
         /// <param name="assembliesToScan"></param>
         /// <param name="addIfAlreadyExists"></param>
-        private static void AddInterfacesAsTransient(Type[] openRequestInterfaces,
+        private static void ConnectImplementationsToTypesClosing(Type openRequestInterface,
             IServiceCollection services,
             IEnumerable<Assembly> assembliesToScan,
             bool addIfAlreadyExists)
         {
-            foreach (var openInterface in openRequestInterfaces)
+            var concretions = new List<Type>();
+            var interfaces = new List<Type>();
+            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()))
             {
-                var concretions = new List<Type>();
-                var interfaces = new List<Type>();
+                var interfaceTypes = type.FindInterfacesThatClose(openRequestInterface).ToArray();
+                if (!interfaceTypes.Any()) continue;
 
-                foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes))
+                if (type.IsConcrete())
                 {
-                    IEnumerable<Type> interfaceTypes = type.FindInterfacesThatClose(openInterface).ToArray();
-                    if (!interfaceTypes.Any()) continue;
+                    concretions.Add(type);
+                }
 
-                    if (type.IsConcrete())
+                foreach (var interfaceType in interfaceTypes)
+                {
+                    interfaces.Fill(interfaceType);
+                }
+            }
+
+            foreach (var @interface in interfaces)
+            {
+                var exactMatches = concretions.Where(x => x.CanBeCastTo(@interface)).ToList();
+                if (addIfAlreadyExists)
+                {
+                    foreach (var type in exactMatches)
                     {
-                        concretions.Add(type);
+                        services.AddTransient(@interface, type);
+                    }
+                }
+                else
+                {
+                    if (exactMatches.Count > 1)
+                    {
+                        exactMatches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
                     }
 
-                    foreach (Type interfaceType in interfaceTypes)
+                    foreach (var type in exactMatches)
                     {
-                        interfaces.Fill(interfaceType);
+                        services.TryAddTransient(@interface, type);
                     }
                 }
 
-                foreach (var @interface in interfaces)
+                if (!@interface.IsOpenGeneric())
                 {
-                    var matches = concretions
-                        .Where(t => t.CanBeCastTo(@interface))
-                        .ToList();
-
-                    if (addIfAlreadyExists)
-                    {
-                        matches.ForEach(match => services.AddTransient(@interface, match));
-                    }
-                    else
-                    {
-                        if (matches.Count() > 1)
-                        {
-                            matches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
-                        }
-
-                        matches.ForEach(match => services.TryAddTransient(@interface, match));
-                    }
-
-                    if (!@interface.IsOpenGeneric())
-                    {
-                        AddConcretionsThatCouldBeClosed(@interface, concretions, services);
-                    }
+                    AddConcretionsThatCouldBeClosed(@interface, concretions, services);
                 }
             }
         }
@@ -275,16 +263,23 @@ namespace MediatR
             return type.GetTypeInfo().IsGenericTypeDefinition || type.GetTypeInfo().ContainsGenericParameters;
         }
 
-        private static IEnumerable<Type> FindInterfacesThatClose(this Type pluggedType, Type templateType)
+        public static IEnumerable<Type> FindInterfacesThatClose(this Type pluggedType, Type templateType)
         {
+            return FindInterfacesThatClosesCore(pluggedType, templateType).Distinct();
+        }
+
+        private static IEnumerable<Type> FindInterfacesThatClosesCore(Type pluggedType, Type templateType)
+        {
+            if (pluggedType == null) yield break;
+
             if (!pluggedType.IsConcrete()) yield break;
 
             if (templateType.GetTypeInfo().IsInterface)
             {
                 foreach (
                     var interfaceType in
-                        pluggedType.GetTypeInfo().ImplementedInterfaces
-                            .Where(type => type.GetTypeInfo().IsGenericType && (type.GetGenericTypeDefinition() == templateType)))
+                    pluggedType.GetInterfaces()
+                        .Where(type => type.GetTypeInfo().IsGenericType && (type.GetGenericTypeDefinition() == templateType)))
                 {
                     yield return interfaceType;
                 }
@@ -295,10 +290,9 @@ namespace MediatR
                 yield return pluggedType.GetTypeInfo().BaseType;
             }
 
-            if (pluggedType == typeof(object)) yield break;
             if (pluggedType.GetTypeInfo().BaseType == typeof(object)) yield break;
 
-            foreach (var interfaceType in FindInterfacesThatClose(pluggedType.GetTypeInfo().BaseType, templateType))
+            foreach (var interfaceType in FindInterfacesThatClosesCore(pluggedType.GetTypeInfo().BaseType, templateType))
             {
                 yield return interfaceType;
             }
