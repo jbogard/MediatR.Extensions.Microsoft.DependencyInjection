@@ -126,6 +126,21 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             }
         }
 
+        public class FirstConcretePreProcessor : IRequestPreProcessor<Ping>
+        {
+            private readonly Logger _output;
+
+            public FirstConcretePreProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(Ping request, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("First concrete pre processor");
+                return Task.FromResult(0);
+            }
+        }
+
         public class NextPreProcessor<TRequest> : IRequestPreProcessor<TRequest>
         {
             private readonly Logger _output;
@@ -140,6 +155,22 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 return Task.FromResult(0);
             }
         }
+
+        public class NextConcretePreProcessor : IRequestPreProcessor<Ping>
+        {
+            private readonly Logger _output;
+
+            public NextConcretePreProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(Ping request, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("Next concrete pre processor");
+                return Task.FromResult(0);
+            }
+        }
+
         public class FirstPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
         {
             private readonly Logger _output;
@@ -155,6 +186,21 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             }
         }
 
+        public class FirstConcretePostProcessor : IRequestPostProcessor<Ping, Pong>
+        {
+            private readonly Logger _output;
+
+            public FirstConcretePostProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(Ping request, Pong response)
+            {
+                _output.Messages.Add("First concrete post processor");
+                return Task.FromResult(0);
+            }
+        }
+
         public class NextPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
         {
             private readonly Logger _output;
@@ -166,6 +212,21 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             public Task Process(TRequest request, TResponse response)
             {
                 _output.Messages.Add("Next post processor");
+                return Task.FromResult(0);
+            }
+        }
+
+        public class NextConcretePostProcessor : IRequestPostProcessor<Ping, Pong>
+        {
+            private readonly Logger _output;
+
+            public NextConcretePostProcessor(Logger output)
+            {
+                _output = output;
+            }
+            public Task Process(Ping request, Pong response)
+            {
+                _output.Messages.Add("Next concrete post processor");
                 return Task.FromResult(0);
             }
         }
@@ -191,9 +252,13 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 "Outer before",
                 "Inner before",
+                "First concrete pre processor",
+                "Next concrete pre processor",
                 "First pre processor",
                 "Next pre processor",
                 "Handler",
+                "First concrete post processor",
+                "Next concrete post processor",
                 "First post processor",
                 "Next post processor",
                 "Inner after",
@@ -223,9 +288,13 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 "Outer generic before",
                 "Inner generic before",
+                "First concrete pre processor",
+                "Next concrete pre processor",
                 "First pre processor",
                 "Next pre processor",
                 "Handler",
+                "First concrete post processor",
+                "Next concrete post processor",
                 "First post processor",
                 "Next post processor",
                 "Inner generic after",
@@ -250,9 +319,13 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
             output.Messages.ShouldBe(new[]
             {
+                "First concrete pre processor",
+                "Next concrete pre processor",
                 "First pre processor",
                 "Next pre processor",
                 "Handler",
+                "First concrete post processor",
+                "Next concrete post processor",
                 "First post processor",
                 "Next post processor",
             });
