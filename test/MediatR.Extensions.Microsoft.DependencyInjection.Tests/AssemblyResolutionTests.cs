@@ -43,5 +43,15 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);
         }
+
+        [Fact]
+        public void ShouldRequireAtLeastOneAssembly()
+        {
+            var services = new ServiceCollection();
+
+            Action registration = () => services.AddMediatR(new Type[0]);
+
+            registration.ShouldThrow<ArgumentException>();
+        }
     }
 }
