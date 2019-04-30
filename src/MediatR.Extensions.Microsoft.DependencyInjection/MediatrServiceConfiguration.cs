@@ -12,7 +12,7 @@ namespace MediatR
         public MediatRServiceConfiguration()
         {
             MediatorImplementationType = typeof(Mediator);
-            Lifetime = ServiceLifetime.Scoped;
+            Lifetime = ServiceLifetime.Transient;
         }
 
         public MediatRServiceConfiguration Using<TMediator>() where TMediator : IMediator
