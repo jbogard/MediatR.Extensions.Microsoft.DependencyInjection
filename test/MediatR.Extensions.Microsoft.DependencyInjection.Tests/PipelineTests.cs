@@ -179,7 +179,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(TRequest request, TResponse response)
+            public Task Process(TRequest request, TResponse response, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("First post processor");
                 return Task.FromResult(0);
@@ -194,7 +194,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(Ping request, Pong response)
+            public Task Process(Ping request, Pong response, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("First concrete post processor");
                 return Task.FromResult(0);
@@ -209,7 +209,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(TRequest request, TResponse response)
+            public Task Process(TRequest request, TResponse response, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("Next post processor");
                 return Task.FromResult(0);
@@ -224,7 +224,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             {
                 _output = output;
             }
-            public Task Process(Ping request, Pong response)
+            public Task Process(Ping request, Pong response, CancellationToken cancellationToken)
             {
                 _output.Messages.Add("Next concrete post processor");
                 return Task.FromResult(0);
