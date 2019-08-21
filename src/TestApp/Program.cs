@@ -25,7 +25,7 @@ namespace TestApp
             services.AddScoped<ServiceFactory>(p => p.GetService);
 
             services.AddSingleton<TextWriter>(writer);
-
+            
             //Pipeline
 
             //This causes a type load exception. https://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection/issues/12
@@ -35,7 +35,8 @@ namespace TestApp
             services.AddMediatR(typeof(Ping));
 
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
-
+            services.AddBehaviorsForRequest<ICovariantPipelinable>(typeof(ICovariantPipelinable));
+            
             foreach (var service in services)
             {
                 Console.WriteLine(service.ServiceType + " - " + service.ImplementationType);
