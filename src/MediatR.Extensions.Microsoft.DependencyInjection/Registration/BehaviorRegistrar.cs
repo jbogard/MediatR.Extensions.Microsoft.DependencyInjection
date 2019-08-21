@@ -6,61 +6,53 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR.Registration
 {
-    public static class BehaviorRegistrar
-    {
-        public static void RegisterBehaviorForCovariantRequest(
-            Type assignableRequestType,
-            IServiceCollection services,
-            IEnumerable<Assembly> assembliesToScan)
-        {
-            var behaviorTypes = new List<Type>();
-            var requestResponseTypes = new List<(Type requestType, Type responseType)>();
+	public static class BehaviorRegistrar
+	{
+		public static void RegisterBehaviorForCovariantRequest(
+			Type assignableRequestType,
+			IServiceCollection services,
+			IEnumerable<Assembly> assembliesToScan)
+		{
+			var types = assembliesToScan.SelectMany(a => a.DefinedTypes).ToArray();
 
-            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => t.IsConcrete()))
-            {
-                if (assignableRequestType.IsAssignableFrom(type))
-                {
-                    var requestInterfaceType =
-                        GetRequestInterfaceType(type, typeof(IRequest<>)) ??
-                        GetRequestInterfaceType(assignableRequestType, typeof(IRequest<>));
+			var handlers = types.Where(t =>
+					t.GetInterface(typeof(IRequestHandler<,>)) != null)
+				.ToArray();
 
-                    if (requestInterfaceType != null)
-                    {
-                        requestResponseTypes.Add((type, requestInterfaceType.GenericTypeArguments[0]));
-                    }
-                }
+			var requestTypes = handlers.Select(h =>
+					h.GetInterface(typeof(IRequestHandler<,>)).GetGenericArguments()[0])
+				.Where(assignableRequestType.IsAssignableFrom)
+				.ToArray();
 
-                var isTypeBehavior = type.GetInterfaces().Any(
-                    x => x.IsGenericType
-                         && x.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>)
-                         && x.GenericTypeArguments[0] == assignableRequestType);
+			var requestResponseTypes = requestTypes
+				.Select(request => (request, request.GetInterface(typeof(IRequest<>)).GetGenericArguments()[0]))
+				.ToArray();
 
-                if (isTypeBehavior)
-                    behaviorTypes.Add(type);
-            }
+			var behaviorTypes = types.Where(t =>
+				{
+					var @interface = t.GetInterface(typeof(IPipelineBehavior<,>));
+					return @interface?.GetGenericArguments()[0].IsAssignableFrom(assignableRequestType) ?? false;
+				})
+				.ToArray();
 
-            foreach (var (requestType, responseType) in requestResponseTypes)
-            {
-                var typeArgs = new[] {requestType, responseType};
-                var closedInterfaceType = typeof(IPipelineBehavior<,>).MakeGenericType(typeArgs);
+			foreach (var (requestType, responseType) in requestResponseTypes)
+			{
+				var typeArgs = new[] {requestType, responseType};
+				var closedInterfaceType = typeof(IPipelineBehavior<,>).MakeGenericType(typeArgs);
 
-                foreach (var behaviorType in behaviorTypes)
-                {
-                    var closedImplementationType = behaviorType.MakeGenericType(responseType);
-                    services.AddTransient(closedInterfaceType, closedImplementationType);
-                }
-            }
-        }
-        private static Type GetRequestInterfaceType(Type pluggedType, Type pluginType)
-        {
-            return pluggedType
-                .GetInterfaces()
-                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == pluginType);
-        }
-        
-        private static bool IsConcrete(this Type type)
-        {
-            return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
-        }
-    }
+				foreach (var behaviorType in behaviorTypes)
+				{
+					var closedImplementationType = behaviorType.MakeGenericType(responseType);
+					services.AddTransient(closedInterfaceType, closedImplementationType);
+				}
+			}
+		}
+
+		private static Type GetInterface(this Type pluggedType, Type interfaceType)
+		{
+			return pluggedType
+				.GetInterfaces()
+				.FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
+		}
+	}
 }
