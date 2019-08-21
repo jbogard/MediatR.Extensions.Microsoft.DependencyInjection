@@ -19,12 +19,9 @@ namespace MediatR.Registration
 					t.GetInterface(typeof(IRequestHandler<,>)) != null)
 				.ToArray();
 
-			var requestTypes = handlers.Select(h =>
+			var requestResponseTypes = handlers.Select(h =>
 					h.GetInterface(typeof(IRequestHandler<,>)).GetGenericArguments()[0])
 				.Where(assignableRequestType.IsAssignableFrom)
-				.ToArray();
-
-			var requestResponseTypes = requestTypes
 				.Select(request => (request, request.GetInterface(typeof(IRequest<>)).GetGenericArguments()[0]))
 				.ToArray();
 
