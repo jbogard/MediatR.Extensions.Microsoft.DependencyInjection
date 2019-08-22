@@ -13,11 +13,11 @@ namespace MediatR.Registration
             IServiceCollection services,
             IEnumerable<Assembly> assembliesToScan)
         {
-            var types = assembliesToScan.SelectMany(a => a.DefinedTypes).ToArray();
+            var types = assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => t.IsConcrete()).ToArray();
 
-            var handlers = types.Where(t => t.GetInterface(typeof(IRequestHandler<,>)) != null);
+            var handlerTypes = types.Where(t => t.GetInterface(typeof(IRequestHandler<,>)) != null);
 
-            var requestResponseTypes = handlers.Select(h =>
+            var requestResponseTypes = handlerTypes.Select(h =>
                     h.GetInterface(typeof(IRequestHandler<,>)).GetGenericArguments()[0])
                 .Where(assignableRequestType.IsAssignableFrom)
                 .Select(request => (request, request.GetInterface(typeof(IRequest<>)).GetGenericArguments()[0]));
@@ -47,6 +47,11 @@ namespace MediatR.Registration
             return pluggedType
                 .GetInterfaces()
                 .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
+        }
+        
+        private static bool IsConcrete(this Type type)
+        {
+            return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
         }
     }
 }
