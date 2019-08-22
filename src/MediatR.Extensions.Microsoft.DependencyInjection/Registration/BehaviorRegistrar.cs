@@ -13,31 +13,21 @@ namespace MediatR.Registration
             IServiceCollection services,
             IEnumerable<Assembly> assembliesToScan)
         {
-            var behaviorTypes = new List<Type>();
-            var requestResponseTypes = new List<(Type requestType, Type responseType)>();
+            var types = assembliesToScan.SelectMany(a => a.DefinedTypes).ToArray();
 
-            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => t.IsConcrete()))
-            {
-                if (assignableRequestType.IsAssignableFrom(type))
+            var handlers = types.Where(t => t.GetInterface(typeof(IRequestHandler<,>)) != null);
+
+            var requestResponseTypes = handlers.Select(h =>
+                    h.GetInterface(typeof(IRequestHandler<,>)).GetGenericArguments()[0])
+                .Where(assignableRequestType.IsAssignableFrom)
+                .Select(request => (request, request.GetInterface(typeof(IRequest<>)).GetGenericArguments()[0]));
+
+            var behaviorTypes = types.Where(t =>
                 {
-                    var requestInterfaceType =
-                        GetRequestInterfaceType(type, typeof(IRequest<>)) ??
-                        GetRequestInterfaceType(assignableRequestType, typeof(IRequest<>));
-
-                    if (requestInterfaceType != null)
-                    {
-                        requestResponseTypes.Add((type, requestInterfaceType.GenericTypeArguments[0]));
-                    }
-                }
-
-                var isTypeBehavior = type.GetInterfaces().Any(
-                    x => x.IsGenericType
-                         && x.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>)
-                         && x.GenericTypeArguments[0] == assignableRequestType);
-
-                if (isTypeBehavior)
-                    behaviorTypes.Add(type);
-            }
+                    var @interface = t.GetInterface(typeof(IPipelineBehavior<,>));
+                    return @interface?.GetGenericArguments()[0].IsAssignableFrom(assignableRequestType) ?? false;
+                })
+                .ToArray();
 
             foreach (var (requestType, responseType) in requestResponseTypes)
             {
@@ -51,16 +41,12 @@ namespace MediatR.Registration
                 }
             }
         }
-        private static Type GetRequestInterfaceType(Type pluggedType, Type pluginType)
+
+        private static Type GetInterface(this Type pluggedType, Type interfaceType)
         {
             return pluggedType
                 .GetInterfaces()
-                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == pluginType);
-        }
-        
-        private static bool IsConcrete(this Type type)
-        {
-            return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
+                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
         }
     }
 }
