@@ -211,10 +211,10 @@ namespace MediatR.Registration
 
         public static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
         {
-            services.AddTransient<ServiceFactory>(p => p.GetService);
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
-            services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+            services.TryAddTransient<ServiceFactory>(p => p.GetService);
+            services.TryAddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.TryAddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
         }
     }
 }
