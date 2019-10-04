@@ -211,10 +211,31 @@ namespace MediatR.Registration
 
         public static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
         {
+            // Use TryAdd, so any existing ServiceFactory/IMediator registration doesn't get overriden
             services.TryAddTransient<ServiceFactory>(p => p.GetService);
-            services.TryAddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.TryAddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
             services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+
+            // Use TryAddTransientExact (see below), we dó want to register our Pre/Post processor behavior, even if (a more concrete)
+            // registration for IPipelineBehavior<,> already exists. But only once.
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+        }
+
+        /// <summary>
+        /// Adds a new transient registration to the service collection only when no existing registration of the same service type and implementation type exists.
+        /// In contrast to TryAddTransient, which only checks the service type.
+        /// </summary>
+        /// <param name="services">The service collection</param>
+        /// <param name="serviceType">Service type</param>
+        /// <param name="implementationType">Implementation type</param>
+        public static void TryAddTransientExact(this IServiceCollection services, Type serviceType, Type implementationType)
+        {
+            if (services.Any(reg => reg.ServiceType == serviceType && reg.ImplementationType == implementationType))
+            {
+                return;
+            }
+
+            services.AddTransient(serviceType, implementationType);
         }
     }
 }
