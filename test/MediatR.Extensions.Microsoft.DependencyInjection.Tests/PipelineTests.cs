@@ -231,6 +231,26 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             }
         }
 
+        public class PingPongExceptionHandlerForType : IRequestExceptionHandler<Ping, Pong, ApplicationException>
+        {
+            public Task Handle(Ping request, ApplicationException exception, RequestExceptionHandlerState<Pong> state, CancellationToken cancellationToken)
+            {
+                state.SetHandled(new Pong { Message = exception.Message + " Handled by Specific Type" });
+
+                return Task.CompletedTask;
+            }
+        }
+
+        public class PingPongGenericExceptionHandler : IRequestExceptionHandler<Ping, Pong>
+        {
+            public Task Handle(Ping request, Exception exception, RequestExceptionHandlerState<Pong> state, CancellationToken cancellationToken)
+            {
+                state.SetHandled(new Pong { Message = exception.Message + " Handled by Generic Type" });
+
+                return Task.CompletedTask;
+            }
+        }
+
         [Fact]
         public async Task Should_wrap_with_behavior()
         {
@@ -329,6 +349,40 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
                 "First post processor",
                 "Next post processor",
             });
+        }
+
+        [Fact]
+        public async Task Should_pick_up_specific_exception_behaviors()
+        {
+            var output = new Logger();
+            IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(output);
+            services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
+            var provider = services.BuildServiceProvider();
+
+            var mediator = provider.GetService<IMediator>();
+
+            var response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new ApplicationException(msg.Message + " Thrown")});
+
+            response.Message.ShouldBe("Ping Thrown Handled by Specific Type");
+
+        }
+
+        [Fact]
+        public async Task Should_pick_up_base_exception_behaviors()
+        {
+            var output = new Logger();
+            IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(output);
+            services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
+            var provider = services.BuildServiceProvider();
+
+            var mediator = provider.GetService<IMediator>();
+
+            var response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new Exception(msg.Message + " Thrown")});
+
+            response.Message.ShouldBe("Ping Thrown Handled by Generic Type");
+
         }
 
         [Fact(Skip = "MS DI does not support constrained generics yet, see https://github.com/aspnet/DependencyInjection/issues/471")]

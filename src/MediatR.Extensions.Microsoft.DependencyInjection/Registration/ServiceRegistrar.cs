@@ -18,6 +18,7 @@ namespace MediatR.Registration
             ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true);
             ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true);
             ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true);
+            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true);
 
             var multiOpenInterfaces = new[]
             {
@@ -30,7 +31,7 @@ namespace MediatR.Registration
             {
                 var concretions = assembliesToScan
                     .SelectMany(a => a.DefinedTypes)
-                    .Where(type => Enumerable.Any<Type>(type.FindInterfacesThatClose(multiOpenInterface)))
+                    .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
                     .Where(type => type.IsConcrete() && type.IsOpenGeneric())
                     .ToList();
 
@@ -59,7 +60,7 @@ namespace MediatR.Registration
             var interfaces = new List<Type>();
             foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()))
             {
-                var interfaceTypes = Enumerable.ToArray<Type>(type.FindInterfacesThatClose(openRequestInterface));
+                var interfaceTypes = type.FindInterfacesThatClose(openRequestInterface).ToArray();
                 if (!interfaceTypes.Any()) continue;
 
                 if (type.IsConcrete())
@@ -165,7 +166,7 @@ namespace MediatR.Registration
 
         public static IEnumerable<Type> FindInterfacesThatClose(this Type pluggedType, Type templateType)
         {
-            return Enumerable.Distinct<Type>(FindInterfacesThatClosesCore(pluggedType, templateType));
+            return FindInterfacesThatClosesCore(pluggedType, templateType).Distinct();
         }
 
         private static IEnumerable<Type> FindInterfacesThatClosesCore(Type pluggedType, Type templateType)
@@ -214,6 +215,7 @@ namespace MediatR.Registration
             services.AddTransient<ServiceFactory>(p => p.GetService);
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
             services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
         }
     }

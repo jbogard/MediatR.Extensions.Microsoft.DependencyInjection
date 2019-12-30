@@ -1,4 +1,6 @@
-﻿namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
+﻿using System;
+
+namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -7,6 +9,7 @@
     public class Ping : IRequest<Pong>
     {
         public string Message { get; set; }
+        public Action<Ping> ThrowAction { get; set; }
     }
 
     public class DerivedPing : Ping
@@ -85,6 +88,9 @@
         public Task<Pong> Handle(Ping message, CancellationToken cancellationToken)
         {
             _logger.Messages.Add("Handler");
+
+            message.ThrowAction?.Invoke(message);
+
             return Task.FromResult(new Pong { Message = message.Message + " Pong" });
         }
     }
@@ -143,6 +149,11 @@
 
     class MyCustomMediator : IMediator
     {
+        public Task<object> Send(object request, CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new System.NotImplementedException();
+        }
+
         public Task Publish(object notification, CancellationToken cancellationToken = new CancellationToken())
         {
             throw new System.NotImplementedException();
