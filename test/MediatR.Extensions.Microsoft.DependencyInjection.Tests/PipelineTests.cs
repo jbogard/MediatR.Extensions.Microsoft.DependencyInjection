@@ -231,6 +231,62 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             }
         }
 
+        public class PingPongGenericExceptionAction : IRequestExceptionAction<Ping>
+        {
+            private readonly Logger _output;
+
+            public PingPongGenericExceptionAction(Logger output) => _output = output;
+
+            public Task Execute(Ping request, Exception exception, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("Logging generic exception");
+
+                return Task.CompletedTask;
+            }
+        }
+
+        public class PingPongApplicationExceptionAction : IRequestExceptionAction<Ping, ApplicationException>
+        {
+            private readonly Logger _output;
+
+            public PingPongApplicationExceptionAction(Logger output) => _output = output;
+
+            public Task Execute(Ping request, ApplicationException exception, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("Logging ApplicationException exception");
+
+                return Task.CompletedTask;
+            }
+        }
+
+        public class PingPongExceptionActionForType1 : IRequestExceptionAction<Ping, SystemException>
+        {
+            private readonly Logger _output;
+
+            public PingPongExceptionActionForType1(Logger output) => _output = output;
+
+            public Task Execute(Ping request, SystemException exception, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("Logging exception 1");
+
+                return Task.CompletedTask;
+            }
+        }
+
+        public class PingPongExceptionActionForType2 : IRequestExceptionAction<Ping, SystemException>
+        {
+            private readonly Logger _output;
+
+            public PingPongExceptionActionForType2(Logger output) => _output = output;
+
+            public Task Execute(Ping request, SystemException exception, CancellationToken cancellationToken)
+            {
+                _output.Messages.Add("Logging exception 2");
+
+                return Task.CompletedTask;
+            }
+        }
+
         public class PingPongExceptionHandlerForType : IRequestExceptionHandler<Ping, Pong, ApplicationException>
         {
             public Task Handle(Ping request, ApplicationException exception, RequestExceptionHandlerState<Pong> state, CancellationToken cancellationToken)
@@ -243,9 +299,13 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
         public class PingPongGenericExceptionHandler : IRequestExceptionHandler<Ping, Pong>
         {
+            private readonly Logger _output;
+
+            public PingPongGenericExceptionHandler(Logger output) => _output = output;
+
             public Task Handle(Ping request, Exception exception, RequestExceptionHandlerState<Pong> state, CancellationToken cancellationToken)
             {
-                state.SetHandled(new Pong { Message = exception.Message + " Handled by Generic Type" });
+                _output.Messages.Add(exception.Message + " Logged by Generic Type");
 
                 return Task.CompletedTask;
             }
@@ -365,11 +425,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
             var response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new ApplicationException(msg.Message + " Thrown")});
 
             response.Message.ShouldBe("Ping Thrown Handled by Specific Type");
-
+            output.Messages.ShouldNotContain("Logging ApplicationException exception");
         }
 
         [Fact]
-        public async Task Should_pick_up_base_exception_behaviors()
+        public void Should_pick_up_base_exception_behaviors()
         {
             var output = new Logger();
             IServiceCollection services = new ServiceCollection();
@@ -379,10 +439,27 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
             var mediator = provider.GetService<IMediator>();
 
-            var response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new Exception(msg.Message + " Thrown")});
+            Should.Throw<Exception>(async () => await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new Exception(msg.Message + " Thrown")}));
 
-            response.Message.ShouldBe("Ping Thrown Handled by Generic Type");
+            output.Messages.ShouldContain("Ping Thrown Logged by Generic Type");
+            output.Messages.ShouldContain("Logging generic exception");
+        }
 
+        [Fact]
+        public void Should_pick_up_exception_actions()
+        {
+            var output = new Logger();
+            IServiceCollection services = new ServiceCollection();
+            services.AddSingleton(output);
+            services.AddMediatR(typeof(Ping).GetTypeInfo().Assembly);
+            var provider = services.BuildServiceProvider();
+
+            var mediator = provider.GetService<IMediator>();
+
+            Should.Throw<SystemException>(async () => await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new SystemException(msg.Message + " Thrown")}));
+
+            output.Messages.ShouldContain("Logging exception 1");
+            output.Messages.ShouldContain("Logging exception 2");
         }
 
         [Fact(Skip = "MS DI does not support constrained generics yet, see https://github.com/aspnet/DependencyInjection/issues/471")]

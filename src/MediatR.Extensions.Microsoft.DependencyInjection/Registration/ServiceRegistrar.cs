@@ -19,12 +19,15 @@ namespace MediatR.Registration
             ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true);
             ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true);
             ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true);
+            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true);
 
             var multiOpenInterfaces = new[]
             {
                 typeof(INotificationHandler<>),
                 typeof(IRequestPreProcessor<>),
-                typeof(IRequestPostProcessor<,>)
+                typeof(IRequestPostProcessor<,>),
+                typeof(IRequestExceptionHandler<,,>),
+                typeof(IRequestExceptionAction<,>)
             };
 
             foreach (var multiOpenInterface in multiOpenInterfaces)
@@ -215,6 +218,7 @@ namespace MediatR.Registration
             services.AddTransient<ServiceFactory>(p => p.GetService);
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
             services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
         }

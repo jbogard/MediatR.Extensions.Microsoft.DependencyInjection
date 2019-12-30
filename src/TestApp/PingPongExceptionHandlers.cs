@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR.Pipeline;
@@ -14,4 +15,26 @@ namespace TestApp
             return Task.CompletedTask;
         }
     }
+
+    public class PingPongExceptionActionForType1 : IRequestExceptionAction<Ping, ApplicationException>
+    {
+        private readonly TextWriter _output;
+
+        public PingPongExceptionActionForType1(TextWriter output) => _output = output;
+
+        public Task Execute(Ping request, ApplicationException exception, CancellationToken cancellationToken)
+            => _output.WriteLineAsync("Logging exception 1");
+    }
+
+    public class PingPongExceptionActionForType2 : IRequestExceptionAction<Ping, ApplicationException>
+    {
+        private readonly TextWriter _output;
+
+        public PingPongExceptionActionForType2(TextWriter output) => _output = output;
+
+        public Task Execute(Ping request, ApplicationException exception, CancellationToken cancellationToken)
+            => _output.WriteLineAsync("Logging exception 2");
+    }
+
+
 }
