@@ -1,7 +1,7 @@
 namespace TestApp
 {
-	public interface ICovariantPipelinable
-	{
-		string PipelineMessage { get; set; }
-	}
+    public interface ICovariantPipelinable
+    {
+        string PipelineMessage { get; set; }
+    }
 }

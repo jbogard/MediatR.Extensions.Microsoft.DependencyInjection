@@ -48,7 +48,7 @@ namespace MediatR.Registration
                 .GetInterfaces()
                 .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
         }
-        
+
         private static bool IsConcrete(this Type type)
         {
             return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
