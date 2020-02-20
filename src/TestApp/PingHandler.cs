@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using MediatR;
@@ -18,6 +19,12 @@ namespace TestApp
         public async Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
         {
             await _writer.WriteLineAsync($"--- Handled Ping: {request.Message}");
+
+            if (request.Throw)
+            {
+                throw new ApplicationException("Requested to throw");
+            }
+
             return new Pong { Message = request.Message + " Pong" };
         }
     }
