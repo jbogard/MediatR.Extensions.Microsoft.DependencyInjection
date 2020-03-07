@@ -47,9 +47,6 @@ namespace MediatR.Registration
                     services.AddTransient(multiOpenInterface, type);
                 }
             }
-
-
-            
         }
 
         /// <summary>
