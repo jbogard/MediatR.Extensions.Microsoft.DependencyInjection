@@ -30,7 +30,7 @@ namespace MediatR.Registration
                 typeof(IRequestExceptionAction<,>)
             };
 
-            foreach (var multiOpenInterface in multiOpenInterfaces)
+            foreach (TypeInfo multiOpenInterface in multiOpenInterfaces)
             {
                 var concretions = assembliesToScan
                     .SelectMany(a => a.DefinedTypes)
@@ -40,9 +40,16 @@ namespace MediatR.Registration
 
                 foreach (var type in concretions)
                 {
+                    if(type.GenericTypeParameters.Length != multiOpenInterface.GenericTypeParameters.Length)
+                    {
+                        continue;
+                    }
                     services.AddTransient(multiOpenInterface, type);
                 }
             }
+
+
+            
         }
 
         /// <summary>
