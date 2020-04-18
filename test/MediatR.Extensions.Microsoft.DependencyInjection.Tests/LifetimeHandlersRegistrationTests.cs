@@ -13,23 +13,22 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             _services = new ServiceCollection();
             _services.AddMediatR(typeof(Ping));
-            //var provider = _services.BuildServiceProvider();
         }
 
         [Fact]
-        public void PingedSingletonHandlerRegistrationShouldBeSingleton()
+        public void SingletonHandlerRegistrationShouldBeSingleton()
         {
             _services.First(s => s.ImplementationType == typeof(SingletonHandler)).Lifetime.ShouldBe(ServiceLifetime.Singleton);
         }
 
         [Fact]
-        public void PingedSingletonHandlerRegistrationShouldBeScoped()
+        public void SingletonHandlerRegistrationShouldBeScoped()
         {
             _services.First(s => s.ImplementationType == typeof(ScopedHandler)).Lifetime.ShouldBe(ServiceLifetime.Scoped);
         }
 
         [Fact]
-        public void PingedSingletonHandlerRegistrationShouldBeTransient()
+        public void SingletonHandlerRegistrationShouldBeTransient()
         {
             _services.First(s => s.ImplementationType == typeof(TransientHandler)).Lifetime.ShouldBe(ServiceLifetime.Transient);
         }
