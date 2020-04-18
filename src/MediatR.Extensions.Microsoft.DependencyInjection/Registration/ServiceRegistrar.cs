@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using MediatR.Extensions.Microsoft.DependencyInjection.Registration;
 using MediatR.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -84,7 +85,28 @@ namespace MediatR.Registration
                 {
                     foreach (var type in exactMatches)
                     {
-                        services.AddTransient(@interface, type);
+                        var attribute = Attribute.GetCustomAttribute(type, typeof(HandlerLifetimeAttribute));
+                        if (attribute is HandlerLifetimeAttribute attr)
+                        {
+                            switch (attr.Lifetime)
+                            {
+                                case ServiceLifetime.Singleton:
+                                    services.AddSingleton(@interface, type);
+                                    break;
+                                case ServiceLifetime.Scoped:
+                                    services.AddScoped(@interface, type);
+                                    break;
+                                case ServiceLifetime.Transient:
+                                    services.AddTransient(@interface, type);
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+                        }
+                        else
+                        {
+                            services.AddTransient(@interface, type);
+                        }
                     }
                 }
                 else

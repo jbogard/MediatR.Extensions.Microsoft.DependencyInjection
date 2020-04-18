@@ -22,6 +22,7 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         [Fact]
         public void ShouldResolveNotificationHandlersOnlyOnce()
         {
+            var list = _provider.GetServices<INotificationHandler<Pinged>>().ToList();
             _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);
         }
     }
