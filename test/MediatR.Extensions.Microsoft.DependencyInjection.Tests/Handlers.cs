@@ -1,4 +1,6 @@
 ﻿using System;
+using MediatR.Extensions.Microsoft.DependencyInjection.Registration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
@@ -41,6 +43,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
     }
 
+    public class LifetimeTestNotification : INotification
+    {
+
+    }
+
     class InternalPing : IRequest { }
 
     public class GenericHandler : INotificationHandler<INotification>
@@ -54,6 +61,29 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
     public class DingAsyncHandler : IRequestHandler<Ding>
     {
         public Task<Unit> Handle(Ding message, CancellationToken cancellationToken) => Unit.Task;
+    }
+
+    public class LifetimeHandlerBase : INotificationHandler<LifetimeTestNotification>
+    {
+        public Task Handle(LifetimeTestNotification notification, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    [HandlerLifetime(ServiceLifetime.Singleton)]
+    public class SingletonHandler : LifetimeHandlerBase
+    {
+    }
+
+    [HandlerLifetime(ServiceLifetime.Scoped)]
+    public class ScopedHandler : LifetimeHandlerBase
+    {
+    }
+
+    [HandlerLifetime(ServiceLifetime.Transient)]
+    public class TransientHandler : LifetimeHandlerBase
+    {
     }
 
     public class PingedHandler : INotificationHandler<Pinged>
