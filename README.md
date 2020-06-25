@@ -1,5 +1,10 @@
 # MediatR extensions for Microsoft.Extensions.DependencyInjection
 
+![CI](https://github.com/jbogard/MediatR.Extensions.Microsoft.DependencyInjection/workflows/CI/badge.svg)
+[![NuGet](https://img.shields.io/nuget/dt/mediatr.extensions.microsoft.dependencyinjection.svg)](https://www.nuget.org/packages/mediatr.extensions.microsoft.dependencyinjection) 
+[![NuGet](https://img.shields.io/nuget/vpre/mediatr.extensions.microsoft.dependencyinjection.svg)](https://www.nuget.org/packages/mediatr.extensions.microsoft.dependencyinjection)
+[![MyGet (dev)](https://img.shields.io/myget/mediatr-ci/v/mediatr.extensions.microsoft.dependencyinjection.svg)](https://myget.org/gallery/mediatr-ci)
+
 Scans assemblies and adds handlers, preprocessors, and postprocessors implementations to the container. To use, with an `IServiceCollection` instance:
 
 ```
