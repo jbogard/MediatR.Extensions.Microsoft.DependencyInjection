@@ -215,12 +215,33 @@ namespace MediatR.Registration
 
         public static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
         {
-            services.AddTransient<ServiceFactory>(p => p.GetService);
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
-            services.Add(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+            // Use TryAdd, so any existing ServiceFactory/IMediator registration doesn't get overriden
+            services.TryAddTransient<ServiceFactory>(p => p.GetService);
+            services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+
+            // Use TryAddTransientExact (see below), we dó want to register our Pre/Post processor behavior, even if (a more concrete)
+            // registration for IPipelineBehavior<,> already exists. But only once.
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
+        }
+
+        /// <summary>
+        /// Adds a new transient registration to the service collection only when no existing registration of the same service type and implementation type exists.
+        /// In contrast to TryAddTransient, which only checks the service type.
+        /// </summary>
+        /// <param name="services">The service collection</param>
+        /// <param name="serviceType">Service type</param>
+        /// <param name="implementationType">Implementation type</param>
+        private static void TryAddTransientExact(this IServiceCollection services, Type serviceType, Type implementationType)
+        {
+            if (services.Any(reg => reg.ServiceType == serviceType && reg.ImplementationType == implementationType))
+            {
+                return;
+            }
+
+            services.AddTransient(serviceType, implementationType);
         }
     }
 }
