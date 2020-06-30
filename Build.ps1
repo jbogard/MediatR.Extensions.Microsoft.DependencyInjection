@@ -32,4 +32,4 @@ exec { & dotnet build -c Release }
 
 exec { & dotnet test -c Release -r $artifacts --no-build -l trx --verbosity=normal }
 
-exec { dotnet pack .\src\MediatR.Extensions.Microsoft.DependencyInjection -c Release -o $artifacts --include-symbols -p:SymbolPackageFormat=snupkg --no-build }
+exec { dotnet pack .\src\MediatR.Extensions.Microsoft.DependencyInjection -c Release -o $artifacts --no-build }
