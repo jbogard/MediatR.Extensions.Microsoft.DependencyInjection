@@ -218,6 +218,8 @@ namespace MediatR.Registration
             // Use TryAdd, so any existing ServiceFactory/IMediator registration doesn't get overriden
             services.TryAddTransient<ServiceFactory>(p => p.GetService);
             services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+            services.TryAdd(new ServiceDescriptor(typeof(ISender), sp => sp.GetService<IMediator>(), serviceConfiguration.Lifetime));
+            services.TryAdd(new ServiceDescriptor(typeof(IPublisher), sp => sp.GetService<IMediator>(), serviceConfiguration.Lifetime));
 
             // Use TryAddTransientExact (see below), we dó want to register our Pre/Post processor behavior, even if (a more concrete)
             // registration for IPipelineBehavior<,> already exists. But only once.
