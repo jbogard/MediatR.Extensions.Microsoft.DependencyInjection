@@ -27,6 +27,18 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
 
         [Fact]
+        public void ShouldResolveSender()
+        {
+            _provider.GetService<ISender>().ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void ShouldResolvePublisher()
+        {
+            _provider.GetService<IPublisher>().ShouldNotBeNull();
+        }
+
+        [Fact]
         public void ShouldResolveRequestHandler()
         {
             _provider.GetService<IRequestHandler<Ping, Pong>>().ShouldNotBeNull();
