@@ -12,7 +12,7 @@ namespace MediatR.Registration
     {
         public static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan)
         {
-            assembliesToScan = (assembliesToScan as Assembly[] ?? assembliesToScan).Distinct().ToArray();
+            assembliesToScan = assembliesToScan.Distinct().ToArray();
 
             ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false);
             ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true);
