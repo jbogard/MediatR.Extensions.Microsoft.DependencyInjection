@@ -20,19 +20,20 @@ services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 This registers:
 
 - `IMediator` as transient
+- `IRequestHandler<>` concrete implementations as transient
 - `INotificationHandler<>` concrete implementations as transient
 - `IRequestPreProcessor<>` concrete implementations as transient
-- `IRequestHandler<>` concrete implementations as transient
 - `IRequestPostProcessor<,>` concrete implementations as transient
 - `IRequestExceptionHandler<,,>` concrete implementations as transient
+- `IRequestExceptionAction<,>)` concrete implementations as transient
 
 This also registers open generic implementations for:
 
 - `INotificationHandler<>`
 - `IRequestPreProcessor<>`
-- `IRequestHandler<>`
 - `IRequestPostProcessor<,>`
 - `IRequestExceptionHandler<,,>`
+- `IRequestExceptionAction<,>`
 
 Keep in mind that the built-in container does not support constrained open generics. If you want this behavior, you will need to add any one of the conforming containers.
 
@@ -43,3 +44,15 @@ services.AddMediatR(cfg => cfg.Using<MyCustomMediator>().AsSingleton(), typeof(S
 ```
 
 To register behaviors, register them individually before or after calling `AddMediatR`.
+
+### Open generics
+
+If you have an open generic not listed above, you'll need to register it explicitly. For example, if you have an open generic request handler, register the open generic types explicitly:
+
+```csharp
+services.AddTransient(typeof(IRequestHandler<,>), typeof(GenericHandlerBase<,>));
+```
+
+This won't work with generic constraints, so you're better off creating an abstract base class and concrete closed generic classes that fill in the right types.
+
+```
