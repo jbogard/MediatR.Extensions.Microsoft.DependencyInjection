@@ -47,6 +47,18 @@ namespace TestApp
                 await writer.WriteLineAsync(e.ToString());
             }
 
+            bool failedMeow = false;
+            await writer.WriteLineAsync("Sending Meow...");
+            try
+            {
+                await mediator.Send(new Meow { Message = "Meow" });
+            }
+            catch (Exception e)
+            {
+                failedMeow = true;
+                await writer.WriteLineAsync(e.ToString());
+            }
+
             await writer.WriteLineAsync("---------------");
             var contents = writer.Contents;
             var order = new[] {
@@ -70,7 +82,8 @@ namespace TestApp
                 NotificationHandler = contents.Contains("Got pinged async"),
                 MultipleNotificationHandlers = contents.Contains("Got pinged async") && contents.Contains("Got pinged also async"),
                 ConstrainedGenericNotificationHandler = contents.Contains("Got pinged constrained async") && !failedPong,
-                CovariantNotificationHandler = contents.Contains("Got notified")
+                CovariantNotificationHandler = contents.Contains("Got notified"),
+                CovariantPipelineBehavior = contents.Contains("Got meowed") && !failedMeow
             };
 
             await writer.WriteLineAsync($"Request Handler...................{(results.RequestHandlers ? "Y" : "N")}");
@@ -84,6 +97,7 @@ namespace TestApp
             await writer.WriteLineAsync($"Notification Handlers.............{(results.MultipleNotificationHandlers ? "Y" : "N")}");
             await writer.WriteLineAsync($"Constrained Notification Handler..{(results.ConstrainedGenericNotificationHandler ? "Y" : "N")}");
             await writer.WriteLineAsync($"Covariant Notification Handler....{(results.CovariantNotificationHandler ? "Y" : "N")}");
+            await writer.WriteLineAsync($"Covariant Pipeline Behavior.......{(results.CovariantPipelineBehavior ? "Y" : "N")}");
         }
     }
 
@@ -100,6 +114,7 @@ namespace TestApp
         public bool MultipleNotificationHandlers { get; set; }
         public bool CovariantNotificationHandler { get; set; }
         public bool ConstrainedGenericNotificationHandler { get; set; }
+        public bool CovariantPipelineBehavior { get; set; }
     }
 
     public class WrappingWriter : TextWriter

@@ -90,5 +90,29 @@ namespace MediatR
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes, Action<MediatRServiceConfiguration> configuration)
             => services.AddMediatR(handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly), configuration);
+        
+        /// <summary>
+        /// Registers behaviors that should react on requests that implement type <typeparam name="T"></typeparam> from the assemblies that contain the specified types
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="handlerAssemblyMarkerTypes"></param>
+        /// <typeparam name="T">Type that requests should implement</typeparam>
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddBehaviorsForRequest<T>(this IServiceCollection services,
+            params Type[] handlerAssemblyMarkerTypes)
+            where T : class
+        {
+            var assemblies = handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly).ToArray();
+
+            if (!assemblies.Any())
+            {
+                throw new ArgumentException(
+                    "No assemblies found to scan. Supply at least one assembly to scan for handlers.");
+            }
+
+            BehaviorRegistrar.RegisterBehaviorForCovariantRequest(typeof(T), services, assemblies);
+
+            return services;
+        }
     }
 }
