@@ -4,10 +4,17 @@ namespace MediatR
 {
     using System;
 
+    public enum RequestExceptionActionProcessorStrategy
+    {
+        ApplyForUnhandledExceptions,
+        ApplyForAllExceptions
+    }
+
     public class MediatRServiceConfiguration
     {
         public Type MediatorImplementationType { get; private set; }
         public ServiceLifetime Lifetime { get; private set; }
+        public RequestExceptionActionProcessorStrategy RequestExceptionActionProcessorStrategy { get; set; }
 
         public MediatRServiceConfiguration()
         {
