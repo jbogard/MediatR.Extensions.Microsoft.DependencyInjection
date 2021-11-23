@@ -26,7 +26,7 @@ namespace MediatR
         /// <param name="assemblies">Assemblies to scan</param>        
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, params Assembly[] assemblies)
-            => services.AddMediatR(assemblies, configuration: null);
+            => services.AddMediatR(assemblies, configuration: null, null);
 
         /// <summary>
         /// Registers handlers and mediator types from the specified assemblies
@@ -36,7 +36,7 @@ namespace MediatR
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatRServiceConfiguration> configuration, params Assembly[] assemblies)
-            => services.AddMediatR(assemblies, configuration);
+            => services.AddMediatR(assemblies, configuration, null);
 
         /// <summary>
         /// Registers handlers and mediator types from the specified assemblies
@@ -45,7 +45,7 @@ namespace MediatR
         /// <param name="assemblies">Assemblies to scan</param>
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
-        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies, Action<MediatRServiceConfiguration> configuration)
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Assembly> assemblies, Action<MediatRServiceConfiguration> configuration, Func<Type, bool> typeEvaluator = null)
         {
             if (!assemblies.Any())
             {
@@ -57,7 +57,7 @@ namespace MediatR
 
             ServiceRegistrar.AddRequiredServices(services, serviceConfig);
 
-            ServiceRegistrar.AddMediatRClasses(services, assemblies);
+            ServiceRegistrar.AddMediatRClasses(services, assemblies, typeEvaluator);
 
             return services;
         }
@@ -69,7 +69,7 @@ namespace MediatR
         /// <param name="handlerAssemblyMarkerTypes"></param>        
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
-            => services.AddMediatR(handlerAssemblyMarkerTypes, configuration: null);
+            => services.AddMediatR(handlerAssemblyMarkerTypes, configuration: null, typeEvaluator: null);
         
         /// <summary>
         /// Registers handlers and mediator types from the assemblies that contain the specified types
@@ -79,7 +79,7 @@ namespace MediatR
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, Action<MediatRServiceConfiguration> configuration, params Type[] handlerAssemblyMarkerTypes)
-            => services.AddMediatR(handlerAssemblyMarkerTypes, configuration);
+            => services.AddMediatR(handlerAssemblyMarkerTypes, configuration, typeEvaluator: null);
 
         /// <summary>
         /// Registers handlers and mediator types from the assemblies that contain the specified types
@@ -89,6 +89,27 @@ namespace MediatR
         /// <param name="configuration">The action used to configure the options</param>
         /// <returns>Service collection</returns>
         public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes, Action<MediatRServiceConfiguration> configuration)
-            => services.AddMediatR(handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly), configuration);
+            => services.AddMediatR(handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly), configuration, typeEvaluator: null);
+
+        /// <summary>
+        /// Registers handlers and mediator types from the assemblies that contain the specified types
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="handlerAssemblyMarkerTypes"></param>
+        /// <param name="configuration">The action used to configure the options</param>
+        /// <param name="typeEvaluator">Function to evaluate types, used to include/exclude namespaces</param>
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, IEnumerable<Type> handlerAssemblyMarkerTypes, Action<MediatRServiceConfiguration> configuration, Func<Type, bool> typeEvaluator)
+            => services.AddMediatR(handlerAssemblyMarkerTypes.Select(t => t.GetTypeInfo().Assembly), configuration, typeEvaluator);
+
+        /// <summary>
+        /// Registers handlers and mediator types from the specified assemblies, excluding specified namespaces
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="assemblies">Assemblies to scan</param>
+        /// <param name="typeEvaluator">Function to evaluate types, used to include/exclude namespaces</param>
+        /// <returns>Service collection</returns>
+        public static IServiceCollection AddMediatR(this IServiceCollection services, Assembly[] assemblies, Func<Type, bool> typeEvaluator)
+            => services.AddMediatR(assemblies, configuration: null, typeEvaluator);
     }
 }

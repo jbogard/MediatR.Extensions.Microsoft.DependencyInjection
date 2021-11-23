@@ -10,16 +10,19 @@ namespace MediatR.Registration
 {
     public static class ServiceRegistrar
     {
-        public static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan)
+        public static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan, Func<Type, bool> typeEvaluator = null)
         {
             assembliesToScan = assembliesToScan.Distinct().ToArray();
+            // if no evaluator is passed we return true for all types
+            if (typeEvaluator is null)
+                typeEvaluator = t => true;
 
-            ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false);
-            ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true);
-            ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true);
-            ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true);
-            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true);
-            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true);
+            ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false, typeEvaluator);
+            ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true, typeEvaluator);
+            ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true, typeEvaluator);
+            ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true, typeEvaluator);
+            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true, typeEvaluator);
+            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true, typeEvaluator);
 
             var multiOpenInterfaces = new[]
             {
@@ -36,6 +39,7 @@ namespace MediatR.Registration
                     .SelectMany(a => a.DefinedTypes)
                     .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
                     .Where(type => type.IsConcrete() && type.IsOpenGeneric())
+                    .Where(typeEvaluator)
                     .ToList();
 
                 foreach (var type in concretions)
@@ -57,11 +61,12 @@ namespace MediatR.Registration
         private static void ConnectImplementationsToTypesClosing(Type openRequestInterface,
             IServiceCollection services,
             IEnumerable<Assembly> assembliesToScan,
-            bool addIfAlreadyExists)
+            bool addIfAlreadyExists,
+            Func<Type,bool> typeEvaluator)
         {
             var concretions = new List<Type>();
             var interfaces = new List<Type>();
-            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()))
+            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()).Where(typeEvaluator))
             {
                 var interfaceTypes = type.FindInterfacesThatClose(openRequestInterface).ToArray();
                 if (!interfaceTypes.Any()) continue;
