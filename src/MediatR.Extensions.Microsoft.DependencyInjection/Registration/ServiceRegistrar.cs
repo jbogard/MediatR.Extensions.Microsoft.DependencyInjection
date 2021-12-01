@@ -32,10 +32,13 @@ namespace MediatR.Registration
 
             foreach (var multiOpenInterface in multiOpenInterfaces)
             {
+                var arity = multiOpenInterface.GetGenericArguments().Length;
+
                 var concretions = assembliesToScan
                     .SelectMany(a => a.DefinedTypes)
                     .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
                     .Where(type => type.IsConcrete() && type.IsOpenGeneric())
+                    .Where(type => type.GetGenericArguments().Length == arity)
                     .ToList();
 
                 foreach (var type in concretions)
