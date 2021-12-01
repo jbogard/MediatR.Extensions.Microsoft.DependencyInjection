@@ -2,11 +2,10 @@
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
-    using System;
-    using System.Linq;
-    using System.Reflection;
     using MediatR.Extensions.Microsoft.DependencyInjection.Tests.Included;
     using Shouldly;
+    using System;
+    using System.Reflection;
     using Xunit;
 
     public class TypeEvaluatorTests
@@ -17,9 +16,9 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         {
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
-            services.AddMediatR(new[] { typeof(Ping).GetTypeInfo().Assembly }, t =>
+            services.AddMediatR(new[] { typeof(Ping).GetTypeInfo().Assembly }, cfg =>
             {
-                return t.Namespace == "MediatR.Extensions.Microsoft.DependencyInjection.Tests.Included";
+                cfg.WithEvaluator(t => t.Namespace == "MediatR.Extensions.Microsoft.DependencyInjection.Tests.Included");
             });
             _provider = services.BuildServiceProvider();
         }

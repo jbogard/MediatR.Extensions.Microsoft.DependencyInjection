@@ -6,6 +6,7 @@ namespace MediatR
 
     public class MediatRServiceConfiguration
     {
+        public Func<Type, bool> TypeEvaluator { get; private set; } = t => true;
         public Type MediatorImplementationType { get; private set; }
         public ServiceLifetime Lifetime { get; private set; }
 
@@ -36,6 +37,12 @@ namespace MediatR
         public MediatRServiceConfiguration AsTransient()
         {
             Lifetime = ServiceLifetime.Transient;
+            return this;
+        }
+
+        public MediatRServiceConfiguration WithEvaluator(Func<Type, bool> evaluator)
+        {
+            TypeEvaluator = evaluator;
             return this;
         }
     }
