@@ -57,7 +57,7 @@ namespace MediatR
 
             ServiceRegistrar.AddRequiredServices(services, serviceConfig);
 
-            ServiceRegistrar.AddMediatRClasses(services, assemblies);
+            ServiceRegistrar.AddMediatRClasses(services, assemblies, serviceConfig);
 
             return services;
         }
