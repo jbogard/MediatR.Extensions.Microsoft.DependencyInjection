@@ -1,7 +1,8 @@
 <Project>
   <PropertyGroup>
     <Authors>Jimmy Bogard</Authors>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);1701;1702;1591</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

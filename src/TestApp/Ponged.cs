@@ -1,9 +1,8 @@
 ﻿using MediatR;
 
-namespace TestApp
-{
-    public class Ponged : INotification
-    {
+namespace TestApp;
 
-    }
+public class Ponged : INotification
+{
+
 }

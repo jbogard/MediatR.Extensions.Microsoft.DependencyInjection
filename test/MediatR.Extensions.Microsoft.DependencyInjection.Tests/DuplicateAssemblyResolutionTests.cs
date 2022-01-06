@@ -1,28 +1,27 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
+namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests;
+
+using System;
+using System.Linq;
+using Shouldly;
+using Xunit;
+
+public class DuplicateAssemblyResolutionTests
 {
-    using System;
-    using System.Linq;
-    using Shouldly;
-    using Xunit;
+    private readonly IServiceProvider _provider;
 
-    public class DuplicateAssemblyResolutionTests
+    public DuplicateAssemblyResolutionTests()
     {
-        private readonly IServiceProvider _provider;
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(new Logger());
+        services.AddMediatR(typeof(Ping), typeof(Ping));
+        _provider = services.BuildServiceProvider();
+    }
 
-        public DuplicateAssemblyResolutionTests()
-        {
-            IServiceCollection services = new ServiceCollection();
-            services.AddSingleton(new Logger());
-            services.AddMediatR(typeof(Ping), typeof(Ping));
-            _provider = services.BuildServiceProvider();
-        }
-
-        [Fact]
-        public void ShouldResolveNotificationHandlersOnlyOnce()
-        {
-            _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);
-        }
+    [Fact]
+    public void ShouldResolveNotificationHandlersOnlyOnce()
+    {
+        _provider.GetServices<INotificationHandler<Pinged>>().Count().ShouldBe(3);
     }
 }

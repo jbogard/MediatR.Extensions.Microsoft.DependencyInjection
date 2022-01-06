@@ -2,22 +2,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+using System.IO;
+
+public class GenericHandler : INotificationHandler<INotification>
 {
-    using System.IO;
+    private readonly TextWriter _writer;
 
-    public class GenericHandler : INotificationHandler<INotification>
+    public GenericHandler(TextWriter writer)
     {
-        private readonly TextWriter _writer;
+        _writer = writer;
+    }
 
-        public GenericHandler(TextWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public Task Handle(INotification notification, CancellationToken cancellationToken)
-        {
-            return _writer.WriteLineAsync("Got notified.");
-        }
+    public Task Handle(INotification notification, CancellationToken cancellationToken)
+    {
+        return _writer.WriteLineAsync("Got notified.");
     }
 }

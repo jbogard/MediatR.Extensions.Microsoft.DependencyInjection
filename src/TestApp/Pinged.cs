@@ -1,9 +1,8 @@
 using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+public class Pinged : INotification
 {
-    public class Pinged : INotification
-    {
          
-    }
 }

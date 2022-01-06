@@ -1,10 +1,9 @@
 ﻿using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+public class Ping : IRequest<Pong>
 {
-    public class Ping : IRequest<Pong>
-    {
-        public string Message { get; set; }
-        public bool Throw { get; set; }
-    }
+    public string? Message { get; set; }
+    public bool Throw { get; set; }
 }

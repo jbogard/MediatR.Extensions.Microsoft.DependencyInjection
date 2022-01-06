@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 {
@@ -8,8 +9,8 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
     public class Ping : IRequest<Pong>
     {
-        public string Message { get; set; }
-        public Action<Ping> ThrowAction { get; set; }
+        public string? Message { get; init; }
+        public Action<Ping>? ThrowAction { get; init; }
     }
 
     public class DerivedPing : Ping
@@ -18,22 +19,22 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
     public class Pong
     {
-        public string Message { get; set; }
+        public string? Message { get; init; }
     }
 
     public class Zing : IRequest<Zong>
     {
-        public string Message { get; set; }
+        public string? Message { get; init; }
     }
 
     public class Zong
     {
-        public string Message { get; set; }
+        public string? Message { get; init; }
     }
 
     public class Ding : IRequest
     {
-        public string Message { get; set; }
+        public string? Message { get; init; }
     }
 
     public class Pinged : INotification
@@ -42,6 +43,11 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
     }
 
     class InternalPing : IRequest { }
+
+    public class StreamPing : IStreamRequest<Pong>
+    {
+        public string? Message { get; init; }
+    }
 
     public class GenericHandler : INotificationHandler<INotification>
     {
@@ -125,6 +131,22 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
         }
     }
 
+    public class PingStreamHandler : IStreamRequestHandler<StreamPing, Pong>
+    {
+        private readonly Logger _output;
+
+        public PingStreamHandler(Logger output)
+        {
+            _output = output;
+        }
+        public async IAsyncEnumerable<Pong> Handle(StreamPing request, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            yield return await Task.Run(() => new Pong { Message = request.Message + " Pang" }, cancellationToken);
+        }
+    }
+
+
     public class DuplicateTest : IRequest<string> { }
     public class DuplicateHandler1 : IRequestHandler<DuplicateTest, string>
     {
@@ -149,12 +171,23 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
 
     class MyCustomMediator : IMediator
     {
-        public Task<object> Send(object request, CancellationToken cancellationToken = new CancellationToken())
+        public Task<object?> Send(object request, CancellationToken cancellationToken = new())
         {
             throw new System.NotImplementedException();
         }
 
-        public Task Publish(object notification, CancellationToken cancellationToken = new CancellationToken())
+        public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request,
+            CancellationToken cancellationToken = new())
+        {
+            throw new NotImplementedException();
+        }
+
+        public IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = new())
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Publish(object notification, CancellationToken cancellationToken = new())
         {
             throw new System.NotImplementedException();
         }
@@ -178,13 +211,13 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests.Included
 
     public class Foo : IRequest<Bar>
     {
-        public string Message { get; set; }
-        public Action<Foo> ThrowAction { get; set; }
+        public string? Message { get; init; }
+        public Action<Foo>? ThrowAction { get; init; }
     }
 
     public class Bar
     {
-        public string Message { get; set; }
+        public string? Message { get; init; }
     }
 
     public class FooHandler : IRequestHandler<Foo, Bar>

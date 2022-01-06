@@ -1,22 +1,24 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using MediatR.Pipeline;
 
-namespace TestApp
+namespace TestApp;
+
+public class GenericRequestPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+
 {
-    public class GenericRequestPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse>
+    private readonly TextWriter _writer;
+
+    public GenericRequestPostProcessor(TextWriter writer)
     {
-        private readonly TextWriter _writer;
+        _writer = writer;
+    }
 
-        public GenericRequestPostProcessor(TextWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public Task Process(TRequest request, TResponse response, CancellationToken cancellationToken)
-        {
-            return _writer.WriteLineAsync("- All Done");
-        }
+    public Task Process(TRequest request, TResponse response, CancellationToken cancellationToken)
+    {
+        return _writer.WriteLineAsync("- All Done");
     }
 }

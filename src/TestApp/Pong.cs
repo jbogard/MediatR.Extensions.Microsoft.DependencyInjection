@@ -1,7 +1,6 @@
-﻿namespace TestApp
+﻿namespace TestApp;
+
+public class Pong
 {
-    public class Pong
-    {
-        public string Message { get; set; }
-    }
+    public string? Message { get; set; }
 }

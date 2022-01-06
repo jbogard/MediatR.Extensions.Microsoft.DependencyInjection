@@ -5,10 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+public class Jing : IRequest
 {
-    public class Jing : IRequest
-    {
-        public string Message { get; set; }
-    }
+    public string? Message { get; set; }
 }
