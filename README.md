@@ -22,6 +22,7 @@ This registers:
 - `IMediator` as transient
 - `IRequestHandler<>` concrete implementations as transient
 - `INotificationHandler<>` concrete implementations as transient
+- `IStreamRequestHandler<>` concrete implementations as transient
 - `IRequestPreProcessor<>` concrete implementations as transient
 - `IRequestPostProcessor<,>` concrete implementations as transient
 - `IRequestExceptionHandler<,,>` concrete implementations as transient
