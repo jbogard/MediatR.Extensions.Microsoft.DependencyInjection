@@ -3,20 +3,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+public class JingHandler : AsyncRequestHandler<Jing>
 {
-    public class JingHandler : AsyncRequestHandler<Jing>
+    private readonly TextWriter _writer;
+
+    public JingHandler(TextWriter writer)
     {
-        private readonly TextWriter _writer;
+        _writer = writer;
+    }
 
-        public JingHandler(TextWriter writer)
-        {
-            _writer = writer;
-        }
-
-        protected override Task Handle(Jing request, CancellationToken cancellationToken)
-        {
-            return _writer.WriteLineAsync($"--- Handled Jing: {request.Message}, no Jong");
-        }
+    protected override Task Handle(Jing request, CancellationToken cancellationToken)
+    {
+        return _writer.WriteLineAsync($"--- Handled Jing: {request.Message}, no Jong");
     }
 }

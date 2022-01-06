@@ -6,258 +6,249 @@ using MediatR.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace MediatR.Registration
+namespace MediatR.Registration;
+
+public static class ServiceRegistrar
 {
-    public static class ServiceRegistrar
+    public static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan, MediatRServiceConfiguration configuration)
     {
-        public static void AddMediatRClasses(IServiceCollection services, IEnumerable<Assembly> assembliesToScan, MediatRServiceConfiguration configuration)
+        assembliesToScan = assembliesToScan.Distinct().ToArray();
+
+        ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false, configuration);
+        ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true, configuration);
+        ConnectImplementationsToTypesClosing(typeof(IStreamRequestHandler<,>), services, assembliesToScan, false, configuration);
+        ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true, configuration);
+        ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true, configuration);
+        ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true, configuration);
+        ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true, configuration);
+
+        var multiOpenInterfaces = new[]
         {
-            assembliesToScan = assembliesToScan.Distinct().ToArray();
+            typeof(INotificationHandler<>),
+            typeof(IRequestPreProcessor<>),
+            typeof(IRequestPostProcessor<,>),
+            typeof(IRequestExceptionHandler<,,>),
+            typeof(IRequestExceptionAction<,>)
+        };
 
-            ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false, configuration);
-            ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true, configuration);
-            ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true, configuration);
-            ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true, configuration);
-            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true, configuration);
-            ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true, configuration);
+        foreach (var multiOpenInterface in multiOpenInterfaces)
+        {
+            var arity = multiOpenInterface.GetGenericArguments().Length;
 
-            var multiOpenInterfaces = new[]
+            var concretions = assembliesToScan
+                .SelectMany(a => a.DefinedTypes)
+                .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
+                .Where(type => type.IsConcrete() && type.IsOpenGeneric())
+                .Where(type => type.GetGenericArguments().Length == arity)
+                .Where(configuration.TypeEvaluator)
+                .ToList();
+
+            foreach (var type in concretions)
             {
-                typeof(INotificationHandler<>),
-                typeof(IRequestPreProcessor<>),
-                typeof(IRequestPostProcessor<,>),
-                typeof(IRequestExceptionHandler<,,>),
-                typeof(IRequestExceptionAction<,>)
-            };
+                services.AddTransient(multiOpenInterface, type);
+            }
+        }
+    }
 
-            foreach (var multiOpenInterface in multiOpenInterfaces)
+    private static void ConnectImplementationsToTypesClosing(Type openRequestInterface,
+        IServiceCollection services,
+        IEnumerable<Assembly> assembliesToScan,
+        bool addIfAlreadyExists,
+        MediatRServiceConfiguration configuration)
+    {
+        var concretions = new List<Type>();
+        var interfaces = new List<Type>();
+        foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()).Where(configuration.TypeEvaluator))
+        {
+            var interfaceTypes = type.FindInterfacesThatClose(openRequestInterface).ToArray();
+            if (!interfaceTypes.Any()) continue;
+
+            if (type.IsConcrete())
             {
-                var arity = multiOpenInterface.GetGenericArguments().Length;
+                concretions.Add(type);
+            }
 
-                var concretions = assembliesToScan
-                    .SelectMany(a => a.DefinedTypes)
-                    .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
-                    .Where(type => type.IsConcrete() && type.IsOpenGeneric())
-                    .Where(type => type.GetGenericArguments().Length == arity)
-                    .Where(configuration.TypeEvaluator)
-                    .ToList();
-
-                foreach (var type in concretions)
-                {
-                    services.AddTransient(multiOpenInterface, type);
-                }
+            foreach (var interfaceType in interfaceTypes)
+            {
+                interfaces.Fill(interfaceType);
             }
         }
 
-        /// <summary>
-        /// Helper method use to differentiate behavior between request handlers and notification handlers.
-        /// Request handlers should only be added once (so set addIfAlreadyExists to false)
-        /// Notification handlers should all be added (set addIfAlreadyExists to true)
-        /// </summary>
-        /// <param name="openRequestInterface"></param>
-        /// <param name="services"></param>
-        /// <param name="assembliesToScan"></param>
-        /// <param name="addIfAlreadyExists"></param>
-        private static void ConnectImplementationsToTypesClosing(Type openRequestInterface,
-            IServiceCollection services,
-            IEnumerable<Assembly> assembliesToScan,
-            bool addIfAlreadyExists,
-            MediatRServiceConfiguration configuration)
+        foreach (var @interface in interfaces)
         {
-            var concretions = new List<Type>();
-            var interfaces = new List<Type>();
-            foreach (var type in assembliesToScan.SelectMany(a => a.DefinedTypes).Where(t => !t.IsOpenGeneric()).Where(configuration.TypeEvaluator))
+            var exactMatches = concretions.Where(x => x.CanBeCastTo(@interface)).ToList();
+            if (addIfAlreadyExists)
             {
-                var interfaceTypes = type.FindInterfacesThatClose(openRequestInterface).ToArray();
-                if (!interfaceTypes.Any()) continue;
-
-                if (type.IsConcrete())
+                foreach (var type in exactMatches)
                 {
-                    concretions.Add(type);
-                }
-
-                foreach (var interfaceType in interfaceTypes)
-                {
-                    interfaces.Fill(interfaceType);
-                }
-            }
-
-            foreach (var @interface in interfaces)
-            {
-                var exactMatches = concretions.Where(x => x.CanBeCastTo(@interface)).ToList();
-                if (addIfAlreadyExists)
-                {
-                    foreach (var type in exactMatches)
-                    {
-                        services.AddTransient(@interface, type);
-                    }
-                }
-                else
-                {
-                    if (exactMatches.Count > 1)
-                    {
-                        exactMatches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
-                    }
-
-                    foreach (var type in exactMatches)
-                    {
-                        services.TryAddTransient(@interface, type);
-                    }
-                }
-
-                if (!@interface.IsOpenGeneric())
-                {
-                    AddConcretionsThatCouldBeClosed(@interface, concretions, services);
-                }
-            }
-        }
-
-        private static bool IsMatchingWithInterface(Type handlerType, Type handlerInterface)
-        {
-            if (handlerType == null || handlerInterface == null)
-            {
-                return false;
-            }
-
-            if (handlerType.IsInterface)
-            {
-                if (handlerType.GenericTypeArguments.SequenceEqual(handlerInterface.GenericTypeArguments))
-                {
-                    return true;
+                    services.AddTransient(@interface, type);
                 }
             }
             else
             {
-                return IsMatchingWithInterface(handlerType.GetInterface(handlerInterface.Name), handlerInterface);
+                if (exactMatches.Count > 1)
+                {
+                    exactMatches.RemoveAll(m => !IsMatchingWithInterface(m, @interface));
+                }
+
+                foreach (var type in exactMatches)
+                {
+                    services.TryAddTransient(@interface, type);
+                }
             }
 
+            if (!@interface.IsOpenGeneric())
+            {
+                AddConcretionsThatCouldBeClosed(@interface, concretions, services);
+            }
+        }
+    }
+
+    private static bool IsMatchingWithInterface(Type handlerType, Type handlerInterface)
+    {
+        if (handlerType == null || handlerInterface == null)
+        {
             return false;
         }
 
-        private static void AddConcretionsThatCouldBeClosed(Type @interface, List<Type> concretions, IServiceCollection services)
+        if (handlerType.IsInterface)
         {
-            foreach (var type in concretions
-                .Where(x => x.IsOpenGeneric() && x.CouldCloseTo(@interface)))
+            if (handlerType.GenericTypeArguments.SequenceEqual(handlerInterface.GenericTypeArguments))
             {
-                try
-                {
-                    services.TryAddTransient(@interface, type.MakeGenericType(@interface.GenericTypeArguments));
-                }
-                catch (Exception)
-                {
-                }
+                return true;
             }
         }
-
-        private static bool CouldCloseTo(this Type openConcretion, Type closedInterface)
+        else
         {
-            var openInterface = closedInterface.GetGenericTypeDefinition();
-            var arguments = closedInterface.GenericTypeArguments;
-
-            var concreteArguments = openConcretion.GenericTypeArguments;
-            return arguments.Length == concreteArguments.Length && openConcretion.CanBeCastTo(openInterface);
+            return IsMatchingWithInterface(handlerType.GetInterface(handlerInterface.Name), handlerInterface);
         }
 
-        private static bool CanBeCastTo(this Type pluggedType, Type pluginType)
+        return false;
+    }
+
+    private static void AddConcretionsThatCouldBeClosed(Type @interface, List<Type> concretions, IServiceCollection services)
+    {
+        foreach (var type in concretions
+                     .Where(x => x.IsOpenGeneric() && x.CouldCloseTo(@interface)))
         {
-            if (pluggedType == null) return false;
-
-            if (pluggedType == pluginType) return true;
-
-            return pluginType.GetTypeInfo().IsAssignableFrom(pluggedType.GetTypeInfo());
-        }
-
-        public static bool IsOpenGeneric(this Type type)
-        {
-            return type.GetTypeInfo().IsGenericTypeDefinition || type.GetTypeInfo().ContainsGenericParameters;
-        }
-
-        public static IEnumerable<Type> FindInterfacesThatClose(this Type pluggedType, Type templateType)
-        {
-            return FindInterfacesThatClosesCore(pluggedType, templateType).Distinct();
-        }
-
-        private static IEnumerable<Type> FindInterfacesThatClosesCore(Type pluggedType, Type templateType)
-        {
-            if (pluggedType == null) yield break;
-
-            if (!pluggedType.IsConcrete()) yield break;
-
-            if (templateType.GetTypeInfo().IsInterface)
+            try
             {
-                foreach (
-                    var interfaceType in
-                    pluggedType.GetInterfaces()
-                        .Where(type => type.GetTypeInfo().IsGenericType && (type.GetGenericTypeDefinition() == templateType)))
-                {
-                    yield return interfaceType;
-                }
+                services.TryAddTransient(@interface, type.MakeGenericType(@interface.GenericTypeArguments));
             }
-            else if (pluggedType.GetTypeInfo().BaseType.GetTypeInfo().IsGenericType &&
-                     (pluggedType.GetTypeInfo().BaseType.GetGenericTypeDefinition() == templateType))
+            catch (Exception)
             {
-                yield return pluggedType.GetTypeInfo().BaseType;
             }
+        }
+    }
 
-            if (pluggedType.GetTypeInfo().BaseType == typeof(object)) yield break;
+    private static bool CouldCloseTo(this Type openConcretion, Type closedInterface)
+    {
+        var openInterface = closedInterface.GetGenericTypeDefinition();
+        var arguments = closedInterface.GenericTypeArguments;
 
-            foreach (var interfaceType in FindInterfacesThatClosesCore(pluggedType.GetTypeInfo().BaseType, templateType))
+        var concreteArguments = openConcretion.GenericTypeArguments;
+        return arguments.Length == concreteArguments.Length && openConcretion.CanBeCastTo(openInterface);
+    }
+
+    private static bool CanBeCastTo(this Type pluggedType, Type pluginType)
+    {
+        if (pluggedType == null) return false;
+
+        if (pluggedType == pluginType) return true;
+
+        return pluginType.GetTypeInfo().IsAssignableFrom(pluggedType.GetTypeInfo());
+    }
+
+    private static bool IsOpenGeneric(this Type type)
+    {
+        return type.GetTypeInfo().IsGenericTypeDefinition || type.GetTypeInfo().ContainsGenericParameters;
+    }
+
+    private static IEnumerable<Type> FindInterfacesThatClose(this Type pluggedType, Type templateType)
+    {
+        return FindInterfacesThatClosesCore(pluggedType, templateType).Distinct();
+    }
+
+    private static IEnumerable<Type> FindInterfacesThatClosesCore(Type pluggedType, Type templateType)
+    {
+        if (pluggedType == null) yield break;
+
+        if (!pluggedType.IsConcrete()) yield break;
+
+        if (templateType.GetTypeInfo().IsInterface)
+        {
+            foreach (
+                var interfaceType in
+                pluggedType.GetInterfaces()
+                    .Where(type => type.GetTypeInfo().IsGenericType && (type.GetGenericTypeDefinition() == templateType)))
             {
                 yield return interfaceType;
             }
         }
-
-        private static bool IsConcrete(this Type type)
+        else if (pluggedType.GetTypeInfo().BaseType.GetTypeInfo().IsGenericType &&
+                 (pluggedType.GetTypeInfo().BaseType.GetGenericTypeDefinition() == templateType))
         {
-            return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
+            yield return pluggedType.GetTypeInfo().BaseType;
         }
 
-        private static void Fill<T>(this IList<T> list, T value)
+        if (pluggedType.GetTypeInfo().BaseType == typeof(object)) yield break;
+
+        foreach (var interfaceType in FindInterfacesThatClosesCore(pluggedType.GetTypeInfo().BaseType, templateType))
         {
-            if (list.Contains(value)) return;
-            list.Add(value);
+            yield return interfaceType;
+        }
+    }
+
+    private static bool IsConcrete(this Type type)
+    {
+        return !type.GetTypeInfo().IsAbstract && !type.GetTypeInfo().IsInterface;
+    }
+
+    private static void Fill<T>(this IList<T> list, T value)
+    {
+        if (list.Contains(value)) return;
+        list.Add(value);
+    }
+
+    public static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
+    {
+        // Use TryAdd, so any existing ServiceFactory/IMediator registration doesn't get overriden
+        services.TryAddTransient<ServiceFactory>(p => p.GetRequiredService);
+        services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
+        services.TryAdd(new ServiceDescriptor(typeof(ISender), sp => sp.GetRequiredService<IMediator>(), serviceConfiguration.Lifetime));
+        services.TryAdd(new ServiceDescriptor(typeof(IPublisher), sp => sp.GetRequiredService<IMediator>(), serviceConfiguration.Lifetime));
+
+        // Use TryAddTransientExact (see below), we dó want to register our Pre/Post processor behavior, even if (a more concrete)
+        // registration for IPipelineBehavior<,> already exists. But only once.
+        services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
+        services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
+
+        if (serviceConfiguration.RequestExceptionActionProcessorStrategy == RequestExceptionActionProcessorStrategy.ApplyForUnhandledExceptions)
+        {
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
+        }
+        else
+        {
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
+            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
+        }
+    }
+
+    /// <summary>
+    /// Adds a new transient registration to the service collection only when no existing registration of the same service type and implementation type exists.
+    /// In contrast to TryAddTransient, which only checks the service type.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="serviceType">Service type</param>
+    /// <param name="implementationType">Implementation type</param>
+    private static void TryAddTransientExact(this IServiceCollection services, Type serviceType, Type implementationType)
+    {
+        if (services.Any(reg => reg.ServiceType == serviceType && reg.ImplementationType == implementationType))
+        {
+            return;
         }
 
-        public static void AddRequiredServices(IServiceCollection services, MediatRServiceConfiguration serviceConfiguration)
-        {
-            // Use TryAdd, so any existing ServiceFactory/IMediator registration doesn't get overriden
-            services.TryAddTransient<ServiceFactory>(p => p.GetService);
-            services.TryAdd(new ServiceDescriptor(typeof(IMediator), serviceConfiguration.MediatorImplementationType, serviceConfiguration.Lifetime));
-            services.TryAdd(new ServiceDescriptor(typeof(ISender), sp => sp.GetService<IMediator>(), serviceConfiguration.Lifetime));
-            services.TryAdd(new ServiceDescriptor(typeof(IPublisher), sp => sp.GetService<IMediator>(), serviceConfiguration.Lifetime));
-
-            // Use TryAddTransientExact (see below), we dó want to register our Pre/Post processor behavior, even if (a more concrete)
-            // registration for IPipelineBehavior<,> already exists. But only once.
-            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPreProcessorBehavior<,>));
-            services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestPostProcessorBehavior<,>));
-
-            if (serviceConfiguration.RequestExceptionActionProcessorStrategy == RequestExceptionActionProcessorStrategy.ApplyForUnhandledExceptions)
-            {
-                services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
-                services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
-            }
-            else
-            {
-                services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
-                services.TryAddTransientExact(typeof(IPipelineBehavior<,>), typeof(RequestExceptionActionProcessorBehavior<,>));
-            }
-        }
-
-        /// <summary>
-        /// Adds a new transient registration to the service collection only when no existing registration of the same service type and implementation type exists.
-        /// In contrast to TryAddTransient, which only checks the service type.
-        /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <param name="serviceType">Service type</param>
-        /// <param name="implementationType">Implementation type</param>
-        private static void TryAddTransientExact(this IServiceCollection services, Type serviceType, Type implementationType)
-        {
-            if (services.Any(reg => reg.ServiceType == serviceType && reg.ImplementationType == implementationType))
-            {
-                return;
-            }
-
-            services.AddTransient(serviceType, implementationType);
-        }
+        services.AddTransient(serviceType, implementationType);
     }
 }

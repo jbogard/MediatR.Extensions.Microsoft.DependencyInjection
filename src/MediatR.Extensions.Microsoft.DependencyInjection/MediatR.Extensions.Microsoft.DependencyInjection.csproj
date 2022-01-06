@@ -5,6 +5,7 @@
     <Copyright>Copyright Jimmy Bogard</Copyright>
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <AssemblyName>MediatR.Extensions.Microsoft.DependencyInjection</AssemblyName>
+    <RootNamespace>MediatR</RootNamespace>
     <PackageId>MediatR.Extensions.Microsoft.DependencyInjection</PackageId>
     <PackageTags>mediator;request;response;queries;commands;notifications</PackageTags>
     <SignAssembly>true</SignAssembly>

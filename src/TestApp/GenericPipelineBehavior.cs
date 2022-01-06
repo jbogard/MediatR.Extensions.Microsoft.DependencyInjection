@@ -3,23 +3,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 
-namespace TestApp
+namespace TestApp;
+
+public class GenericPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest: IRequest<TResponse>
 {
-    public class GenericPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    private readonly TextWriter _writer;
+
+    public GenericPipelineBehavior(TextWriter writer)
     {
-        private readonly TextWriter _writer;
+        _writer = writer;
+    }
 
-        public GenericPipelineBehavior(TextWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
-        {
-            await _writer.WriteLineAsync("-- Handling Request");
-            var response = await next();
-            await  _writer.WriteLineAsync("-- Finished Request");
-            return response;
-        }
+    public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+    {
+        await _writer.WriteLineAsync("-- Handling Request");
+        var response = await next();
+        await  _writer.WriteLineAsync("-- Finished Request");
+        return response;
     }
 }
