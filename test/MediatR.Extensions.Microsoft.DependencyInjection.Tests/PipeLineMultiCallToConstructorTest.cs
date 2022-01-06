@@ -40,7 +40,7 @@ public class PipelineMultiCallToConstructorTests
     public class ConstructorTestHandler : IRequestHandler<ConstructorTestRequest, ConstructorTestResponse>
     {
 
-        private static volatile object _lockObject = new object();
+        private static volatile object _lockObject = new();
         private readonly Logger _logger;
         private static int _constructorCallCount;
 

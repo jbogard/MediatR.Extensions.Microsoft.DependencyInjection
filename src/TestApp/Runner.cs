@@ -89,23 +89,23 @@ public static class Runner
 
 public class RunResults
 {
-    public bool RequestHandlers { get; set; }
-    public bool VoidRequestsHandlers { get; set; }
-    public bool PipelineBehaviors { get; set; }
-    public bool RequestPreProcessors { get; set; }
-    public bool RequestPostProcessors { get; set; }
-    public bool OrderedPipelineBehaviors { get; set; }
-    public bool ConstrainedGenericBehaviors { get; set; }
-    public bool NotificationHandler { get; set; }
-    public bool MultipleNotificationHandlers { get; set; }
-    public bool CovariantNotificationHandler { get; set; }
-    public bool ConstrainedGenericNotificationHandler { get; set; }
+    public bool RequestHandlers { get; init; }
+    public bool VoidRequestsHandlers { get; init; }
+    public bool PipelineBehaviors { get; init; }
+    public bool RequestPreProcessors { get; init; }
+    public bool RequestPostProcessors { get; init; }
+    public bool OrderedPipelineBehaviors { get; init; }
+    public bool ConstrainedGenericBehaviors { get; init; }
+    public bool NotificationHandler { get; init; }
+    public bool MultipleNotificationHandlers { get; init; }
+    public bool CovariantNotificationHandler { get; init; }
+    public bool ConstrainedGenericNotificationHandler { get; init; }
 }
 
 public class WrappingWriter : TextWriter
 {
     private readonly TextWriter _innerWriter;
-    private readonly StringBuilder _stringWriter = new StringBuilder();
+    private readonly StringBuilder _stringWriter = new();
 
     public WrappingWriter(TextWriter innerWriter)
     {
