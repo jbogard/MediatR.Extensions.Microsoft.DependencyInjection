@@ -55,5 +55,14 @@ services.AddTransient(typeof(IRequestHandler<,>), typeof(GenericHandlerBase<,>))
 ```
 
 This won't work with generic constraints, so you're better off creating an abstract base class and concrete closed generic classes that fill in the right types.
-
+Or you can add **Autofac** and add generic handlers.
+```C#
+public static ContainerBuilder AddGenericHandlers(this ContainerBuilder builder)
+{
+    builder.RegisterGeneric(typeof(GenericHandlerBase<,>.Handler)).AsImplementedInterfaces();
+    //or
+    builder.RegisterGeneric(typeof(AddNoteCommandHandler<>)).AsImplementedInterfaces();    
+    return builder;
+}
+```
 ```
