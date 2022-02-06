@@ -238,3 +238,127 @@ namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests.Included
         }
     }
 }
+
+namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests
+{
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Collections.Generic;
+
+    public interface ILayout
+    {
+        public string Header { get; set; }
+        public string Body { get; set; }
+        public string Footer { get; set; }
+    }
+    public interface IInputPage
+    {
+        public string InputField { get; set; }
+    }
+
+    public class Result<T>
+    {
+        public bool IsSuccess { get; set; }
+        public bool Unauthorized { get; set; }
+
+        public T Value { get; set; }
+        public string Error { get; set; }
+
+        public static Result<T> Success(T value) => new Result<T> { IsSuccess = true, Value = value };
+        public static Result<T> Failure(string error, bool unauthorized = false) => new Result<T> { IsSuccess = false, Error = error, Unauthorized = unauthorized };
+        public static Result<T> Failure(T value, string error, bool unauthorized = false) => new Result<T> { IsSuccess = false, Value = value, Error = error, Unauthorized = unauthorized };
+
+        public static Result<T> Cast<T>(Result<MainLayout> result) where T : MainLayout
+        {
+            return new Result<T> { IsSuccess = result.IsSuccess, Value = (T)result.Value, Error = result.Error };
+        }
+    }
+
+    public class SimpleGeneric
+    {
+        public class Query<T> : IRequest<Result<T>> where T : ILayout, new()
+        {
+            public int IDPage { get; set; }
+        }
+
+        public class Handler<T> : IRequestHandler<Query<T>, Result<T>> where T : ILayout, new()
+        {
+            public async Task<Result<T>> Handle(Query<T> request, CancellationToken cancellationToken)
+            {
+                var dto = new T() { Body = "lorem", Header = "Ipsum", Footer = "Odor" };
+                if (T is IInputPage inputDTO)
+                    inputDTO.InputField = "Username";
+
+                return dto;
+            }
+        }
+    }
+
+    public interface T_X
+    {
+        public int IDChild { get; set; }
+    }
+
+    public interface T_XDomains
+    {
+        public int IDParent { get; set; }
+        public int IDChild { get; set; }
+    }
+
+    public class MaybeSimpleGeneric
+    {
+        public record Data<T, U> where T : T_X where U : T_XDomains
+        {
+            public U T_Xdomains { get; set; }
+            public T T_X { get; set; }
+        }
+
+        public class Query<T, U> : IRequest<List<Data<T, U>>> where T : T_X where U : T_XDomains
+        {
+            public int IDPage { get; set; }
+        }
+
+        public class Handler<T, U> : IRequestHandler<Query<T, U>, List<Data<T, U>>> where T : T_X where U : T_XDomains
+        {
+            public async Task<List<Data<T, U>>> Handle(Query<T, U> request, CancellationToken cancellationToken)
+            {
+                //join the tables with _application.Context with Child ID and return some data
+                return new List<Data<T, U>>() { new Data<T, U>() { T_X = new() { IDChild = 1 }, T_Xdomains = new() { IDChild = 1, IDParent = 2 } } };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Will be inherited by return type DTOs
+    /// </summary>
+    public interface IOutside
+    {
+        public int Outside { get; set; }
+    }
+
+    public class ComplexGeneric
+    {
+        public record Data<T, U> where T : T_X where U : T_XDomains
+        {
+            public U T_Xdomains { get; set; }
+            public T T_X { get; set; }
+        }
+
+        public class Query<T, U, R> : IRequest<Result<List<R>>> where T : class, T_x where U : class, T_xDomains where R : class, IOutside
+        {
+            public int IDPage { get; set; }
+            public Func<Data<T, U>, R> SelectQuery { get; set; }
+        }
+
+        public class Handler<T, U, R> : IRequestHandler<Query<T, U, R>, Result<List<R>>> where T : class, T_x where U : class, T_xDomains where R : class, IOutside
+        {
+            public async Task<Result<List<R>>> Handle(Query<T, U, R> request, CancellationToken cancellationToken)
+            {
+                //join the tables with _application.Context with Child ID and return some data
+                var dataAfterJoiningSaidTables = new List<Data<T, U>>() { new Data<T, U>() { T_X = new() { IDChild = 1 }, T_Xdomains = new() { IDChild = 1, IDParent = 2 } } };
+                return request.SelectQuery(dataAfterJoiningSaidTables); //.ToListAsync()
+            }
+        }
+    }
+}

@@ -33,6 +33,8 @@ public class Program
 
         services.AddMediatR(typeof(Ping));
 
+        services.RegisterGenericMediatRHandlers(typeof(Ping).Assembly);
+
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
 
         foreach (var service in services)

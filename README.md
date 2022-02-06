@@ -54,15 +54,9 @@ If you have an open generic not listed above, you'll need to register it explici
 services.AddTransient(typeof(IRequestHandler<,>), typeof(GenericHandlerBase<,>));
 ```
 
-This won't work with generic constraints, so you're better off creating an abstract base class and concrete closed generic classes that fill in the right types.
-Or you can add **Autofac** and add generic handlers.
-```C#
-public static ContainerBuilder AddGenericHandlers(this ContainerBuilder builder)
-{
-    builder.RegisterGeneric(typeof(GenericHandlerBase<,>.Handler)).AsImplementedInterfaces();
-    //or
-    builder.RegisterGeneric(typeof(AddNoteCommandHandler<>)).AsImplementedInterfaces();    
-    return builder;
-}
-```
+~~This won't work with generic constraints, so you're better off creating an abstract base class and concrete closed generic classes that fill in the right types.~~
+To Register Open Bound generic Handlers i.e. constrained Handler
+simply: `services.RegisterGenericMediatRHandlers(typeof(GenericHandlerBase).Assembly);`
+
+See src/Handlers.cs for examples, **NOTE**: All Generic arguments must be bound.
 ```
