@@ -14,42 +14,49 @@ public static class ServiceRegistrar
     {
         assembliesToScan = assembliesToScan.Distinct().ToArray();
 
-        ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false, configuration);
-        ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true, configuration);
-        ConnectImplementationsToTypesClosing(typeof(IStreamRequestHandler<,>), services, assembliesToScan, false, configuration);
-        ConnectImplementationsToTypesClosing(typeof(IRequestPreProcessor<>), services, assembliesToScan, true, configuration);
-        ConnectImplementationsToTypesClosing(typeof(IRequestPostProcessor<,>), services, assembliesToScan, true, configuration);
-        ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>), services, assembliesToScan, true, configuration);
-        ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>), services, assembliesToScan, true, configuration);
-
-        var multiOpenInterfaces = new[]
+        var registrations = new HashSet<TypeRegistration>(configuration.AdditionalClasses)
         {
-            typeof(INotificationHandler<>),
-            typeof(IRequestPreProcessor<>),
-            typeof(IRequestPostProcessor<,>),
-            typeof(IRequestExceptionHandler<,,>),
-            typeof(IRequestExceptionAction<,>)
+            new TypeRegistration(typeof(IRequestHandler<,>), true),
+            new TypeRegistration(typeof(INotificationHandler<>)),
+            new TypeRegistration(typeof(IStreamRequestHandler<,>), true),
+            new TypeRegistration(typeof(IRequestPreProcessor<>)),
+            new TypeRegistration(typeof(IRequestPostProcessor<,>)),
+            new TypeRegistration(typeof(IRequestExceptionHandler<,,>)),
+            new TypeRegistration(typeof(IRequestExceptionAction<,>))
         };
 
-        foreach (var multiOpenInterface in multiOpenInterfaces)
+        foreach (var registration in registrations)
         {
-            var arity = multiOpenInterface.GetGenericArguments().Length;
+            ConnectImplementationsToTypesClosing(registration.InterfaceType, services, assembliesToScan, !registration.SingleImplementation, configuration);
 
-            var concretions = assembliesToScan
-                .SelectMany(a => a.DefinedTypes)
-                .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
-                .Where(type => type.IsConcrete() && type.IsOpenGeneric())
-                .Where(type => type.GetGenericArguments().Length == arity)
-                .Where(configuration.TypeEvaluator)
-                .ToList();
-
-            foreach (var type in concretions)
+            if (!registration.SingleImplementation)
             {
-                services.AddTransient(multiOpenInterface, type);
+                ConnectMultiOpenInterfaceToTypesClosing(registration.InterfaceType, services, assembliesToScan, configuration);
             }
         }
     }
 
+    private static void ConnectMultiOpenInterfaceToTypesClosing(Type multiOpenInterface,
+        IServiceCollection services,
+        IEnumerable<Assembly> assembliesToScan,
+        MediatRServiceConfiguration configuration)
+    {
+        var arity = multiOpenInterface.GetGenericArguments().Length;
+
+        var concretions = assembliesToScan
+            .SelectMany(a => a.DefinedTypes)
+            .Where(type => type.FindInterfacesThatClose(multiOpenInterface).Any())
+            .Where(type => type.IsConcrete() && type.IsOpenGeneric())
+            .Where(type => type.GetGenericArguments().Length == arity)
+            .Where(configuration.TypeEvaluator)
+            .ToList();
+
+        foreach (var type in concretions)
+        {
+            services.AddTransient(multiOpenInterface, type);
+        }
+    }
+    
     private static void ConnectImplementationsToTypesClosing(Type openRequestInterface,
         IServiceCollection services,
         IEnumerable<Assembly> assembliesToScan,

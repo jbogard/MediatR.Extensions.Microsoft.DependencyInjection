@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Generic;
+using MediatR.Registration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MediatR;
 
@@ -9,6 +11,7 @@ public class MediatRServiceConfiguration
     public Func<Type, bool> TypeEvaluator { get; private set; } = t => true;
     public Type MediatorImplementationType { get; private set; }
     public ServiceLifetime Lifetime { get; private set; }
+    public HashSet<TypeRegistration> AdditionalClasses { get; } = new();
     public RequestExceptionActionProcessorStrategy RequestExceptionActionProcessorStrategy { get; set; }
 
     public MediatRServiceConfiguration()
