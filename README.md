@@ -20,6 +20,8 @@ services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 This registers:
 
 - `IMediator` as transient
+- `ISender` as transient
+- `IPublisher` as transient
 - `IRequestHandler<>` concrete implementations as transient
 - `INotificationHandler<>` concrete implementations as transient
 - `IStreamRequestHandler<>` concrete implementations as transient
