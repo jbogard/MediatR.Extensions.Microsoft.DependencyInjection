@@ -17,7 +17,7 @@ public class PipelineMultiCallToConstructorTests
 
         public ConstructorTestBehavior(Logger output) => _output = output;
 
-        public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("ConstructorTestBehavior before");
             var response = await next();

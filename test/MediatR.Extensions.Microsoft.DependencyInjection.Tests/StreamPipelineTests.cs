@@ -24,7 +24,7 @@ public class StreamPipelineTests
             _output = output;
         }
 
-        public async IAsyncEnumerable<Pong> Handle(StreamPing request, [EnumeratorCancellation] CancellationToken cancellationToken, StreamHandlerDelegate<Pong> next)
+        public async IAsyncEnumerable<Pong> Handle(StreamPing request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
             await foreach (var response in next().WithCancellation(cancellationToken))
@@ -44,7 +44,7 @@ public class StreamPipelineTests
             _output = output;
         }
 
-        public async IAsyncEnumerable<Pong> Handle(StreamPing request, [EnumeratorCancellation] CancellationToken cancellationToken, StreamHandlerDelegate<Pong> next)
+        public async IAsyncEnumerable<Pong> Handle(StreamPing request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
             await foreach (var response in next().WithCancellation(cancellationToken))
